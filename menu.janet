@@ -102,7 +102,7 @@
   (put state k nil))
 
 (merge-into state
-            {:menu :file
+            {#:menu :file  #uncomment to have a menu always open
              :event/changed true})
 
 # our "dom" tree
@@ -154,7 +154,7 @@
           :edit
           [text {} "Undo"])]])
 
-    [block {}
+    [padding {:top 100}
      [text {} (string/format "%.40m" props)]]
     #
 ]])
