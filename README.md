@@ -21,7 +21,7 @@ freja menu.janet
 to find the source for the menu
 
 1. hit Ctrl/Cmd+F
-2. write `(def md ```, hit enter
+2. write `(def md`, hit enter
 3. there's the markdown, and just below, the hiccup to render the markdown
 
 you can modify the markdown or hiccup and hit Ctrl/Cmd+L
