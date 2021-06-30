@@ -5,7 +5,7 @@ layouting library for freja
 
 [freja](https://github.com/Saikyun/freja) installed
 
-# instructions to try menu example
+# instructions to try markdown example
 
 ```
 git clone https://github.com/Saikyun/freja-layouting
@@ -14,16 +14,14 @@ freja menu.janet
 ```
 
 1. in freja, hit Ctrl/Cmd+L to load the file
-2. a menu should show up
+2. some text should show up on the right side
 
-
-# modifying the menu
+# modifying the markdown
 
 to find the source for the menu
 
 1. hit Ctrl/Cmd+F
-2. write `(defn tree`, hit enter
-3. there's the hiccup representing the menu
+2. write `(def md ```, hit enter
+3. there's the markdown, and just below, the hiccup to render the markdown
 
-you can modify the hiccup and hit Ctrl/Cmd+L
-for example, try changing the padding of the padding elements. or add a button that prints something :)
+you can modify the markdown or hiccup and hit Ctrl/Cmd+L
