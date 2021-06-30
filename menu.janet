@@ -235,10 +235,10 @@
 
 (defn markdown
   [props & children]
-  (def md (string/join children "\n"))
+  (def md-string (string/join children "\n"))
 
   [block props
-   ;(md->hiccup md)])
+   ;(md->hiccup md-string)])
 
 (defn other-stuff
   [props]
