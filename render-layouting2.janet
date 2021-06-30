@@ -1,4 +1,5 @@
 (use jaylib)
+(import ./assets :as a)
 
 (defmacro with-matrix
   [& body]
@@ -26,14 +27,17 @@
   [form]
   ~(try
      ,form
-     ([err]
+     ([err fib]
        (print "Error inside macro, this is the expansion:")
        (pp (macex ',form))
-       (error err))))
+       (print "STACKTRACE")
+       (debug/stacktrace fib err)
+       #       (error err)
+)))
 
 (defn render-elem
   [e]
-  (print-expansion-on-error
+  #(print-expansion-on-error
     (wrap-offset
       e
 
@@ -41,7 +45,8 @@
         (:render e))
 
       (unless (e :manually-render-children)
-        (render-children e)))))
+        (render-children e))))
+#)
 
 (varfn render-children
   [{:children children}]
@@ -66,6 +71,18 @@
 (defn text-render
   [{:color color
     :text text
-    :size size}]
-  (default color 0x000000ff)
-  (draw-text text 0 0 size color))
+    :font font
+    :size size
+    :spacing spacing
+    :lines lines
+    :line-ys line-ys
+    :line-height line-height}]
+
+  (def f (a/font font size))
+
+  (loop [i :range [0 (length lines)]
+         :let [l (lines i)
+               ly (line-ys i)]]
+    (draw-text-ex f l [0 ly] size spacing color))
+
+)

@@ -1,22 +1,47 @@
 (import jaylib)
 (import ./render-layouting2 :as r :fresh true)
 (import freja/frp)
+(import ./assets :as a)
 
 (defn text
   [{:size size
-    :color color} & children]
-  (default size 14)
+    :font font
+    :line-height line-height
+    :color color
+    :spacing spacing} & children]
+  (default size (dyn :text/size 14))
+  (default font (dyn :text/font))
+  (default line-height (dyn :text/line-height 1))
+  (default spacing (dyn :text/spacing 2))
+  (default color 0x000000ff)
 
   (def t (string/join children ""))
-  (def w (jaylib/measure-text t size))
+  (def lines (string/split "\n" t))
+  (def line-ys (array/new (length lines)))
+  (var w 0)
+  (var h 0)
+
+  (array/push line-ys 0)
+
+  (each l lines
+    (let [[lw lh] (jaylib/measure-text-ex (a/font font size) l size spacing)]
+      (set w (max w lw))
+      (+= h (* line-height lh))
+      (array/push line-ys h)))
+
+  (+= h (* line-height (min 0 (dec (length lines)))))
 
   @{:render r/text-render
     :color color
     :size size
+    :spacing spacing
+    :font font
     :text t
+    :line-height line-height
+    :line-ys line-ys
+    :lines lines
     :width w
-    :height size})
-
+    :height h})
 
 (defn merge-props
   [props extra]
@@ -239,7 +264,7 @@ Sets the x/y-offset of the elements.
 (defn add-children
   [component children &keys {:max-width max-width
                              :max-height max-height}]
-  (assert max-width)
+  (assert max-width "there must always be a :max-width")
   (assert max-height)
 
   (def children (map |(if (table? $)
@@ -325,7 +350,7 @@ deal with the children explicitly. in my opinion,
 this complexity is worth the ease of use for the
 component designer and implementer.
 ````
-  [extra hiccup]
+  [context hiccup]
   (def hiccup (if (string? hiccup)
                 [text {} hiccup]
                 hiccup))
@@ -338,10 +363,12 @@ component designer and implementer.
                   "\nis not, full form:\n"
                   (string/format "%.40M" props)))
 
+  (assert context "context must be defined")
+
   (def children (drop 2 hiccup))
   # (tracev hiccup)
   (def res (if (function? f-or-table)
-             (f-or-table (merge-props props (or extra {}))
+             (f-or-table (merge-props props context)
                          ;children)
 
              (add-children
@@ -350,16 +377,16 @@ component designer and implementer.
                # if max-width or width is defined in f-or-table (i.e. the user
                # explicitly set a width / max-width) we use that
                # otherwise, use the max-width coming from the parent of
-               # f-or-table, that is (extra :max-width)
+               # f-or-table, that is (context :max-width)
                :max-width (get f-or-table :max-width
                                (get f-or-table :width
-                                    (extra :max-width)))
+                                    (context :max-width)))
                :max-height (get f-or-table :max-height
                                 (get f-or-table :height
-                                     (extra :max-height))))))
+                                     (context :max-height))))))
 
   (def res (cond (indexed? res) # tuple or array
-             (compile extra res)
+             (compile context res)
 
              res))
 
@@ -406,11 +433,20 @@ component designer and implementer.
   #
 )
 
+
+(defn single
+  "Copy of table `t` without :children key."
+  [t]
+  (var nt @{})
+  (loop [[k v] :pairs t
+         :when (not= k :children)]
+    (put nt k v))
+  nt)
+
+
 (defn padding
   [props & children]
-  (def {:height height
-        :width width
-        :max-height max-height
+  (def {:max-height max-height
         :max-width max-width
         :all all
         :left left
@@ -424,11 +460,13 @@ component designer and implementer.
   (default right (or all 0))
   (default bottom (or all 0))
 
-  (def children (map |(compile {:max-width (- max-width left right)
+  (def inner-width (- max-width left right))
+
+  (def children (map |(compile {:max-width inner-width
                                 :max-height (- max-height top bottom)} $)
                      (or children [])))
 
-  (def [w h] (flow-elements max-width children))
+  (def [w h] (flow-elements inner-width children))
 
   @{:children children
     :width (+ w left right)
@@ -497,43 +535,31 @@ component designer and implementer.
     :height (or (props :height) h)
     :children children})
 
+(defn vertical
+  [props & children]
+  (def children (compile-children props children))
+
+  (def [w h] (vertical-elements children))
+
+  @{:width w
+    :height h
+    :children children})
+
 (defn grid
   [props & children]
 
   (def {:space-evenly se
         :space-between sb
-        :spacing sp} props)
+        :spacing sp
+        :vertical v} props)
 
   (cond sp (spacing props ;children)
     se (space-evenly props ;children)
     sb (space-between props ;children)
+    vertical (vertical props ;children)
     [block {} ;children])
   #
 )
-
-(defn align-right
-  [props & children]
-  (def {:max-width max-width
-        :max-height max-height
-        :width width}
-    props)
-
-  (default width max-width)
-
-  (def compiled-children
-    (map |(compile {:max-width max-width
-                    :max-height max-height} $)
-         children))
-
-  (def inner-width ((elems->bounding-box max-width compiled-children) 0))
-
-  (pp width)
-
-  [{:tag :align-right
-    :absolute-offset [(- width inner-width) nil]}
-   {}
-   ;children])
-
 
 (def tree
   [padding
@@ -545,7 +571,7 @@ component designer and implementer.
      [text {:size 15
             :color 0xff00ffff}
       "Hello 123 123 123 123 12 123 123!"]]]
-   [align-right {}
+   [block {}
     [text {} "Hello!"]]])
 
 

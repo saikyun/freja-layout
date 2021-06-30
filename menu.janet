@@ -3,6 +3,19 @@
 (import ./layouting2 :prefix "" :fresh true)
 (import ./render-layouting2 :as r :fresh true)
 (import freja/events :as e)
+(import ./assets :as a)
+
+(a/register-font "Poppins"
+                 :style :regular
+                 :path "../freja/fonts/Poppins-Regular.otf")
+
+(a/register-font "MplusCode"
+                 :style :regular
+                 :path "../freja/fonts/MplusCodeLatin60-Medium.otf")
+
+(a/register-font "EBGaramond"
+                 :style :regular
+                 :path "../freja/fonts/EBGaramond12-Regular.otf")
 
 (defn in-rec?
   [[px py] x y w h]
@@ -105,6 +118,169 @@
             {:menu :file
              :event/changed true})
 
+(defn menu
+  [props & _]
+  [background {:color 0x00000011}
+   [block {}
+    [padding {:all 5}
+     [button {:on-press (fn [self ev]
+                          (e/put! state :menu :file))}
+      [padding {:all 10}
+       [text {:size 24
+              :font "Poppins"}
+        "File"]]]]
+
+    [padding {:all 5}
+     [button {:on-press (fn [self ev]
+                          (e/put! state :menu :edit))}
+      [padding {:all 10}
+       [text {:size 24}
+        "Edit"]]]
+     #
+]]
+
+   (when (props :menu)
+     [background {:color 0x0000ff33}
+      [block {:max-width 200}
+       (case (props :menu)
+         :file
+         [block {}
+          [button {:on-press
+                   (fn [self ev]
+                     (i/open-file (frp/text-area :gb))
+                     (e/put! state :menu nil))}
+           [grid {:space-between true}
+            "Open"
+            [text {:font "MplusCode"}
+             "Ctrl+O"]]]
+          [button {:on-press (fn [& _]
+                               (i/quit (frp/text-area :gb)))}
+           [grid {:space-between true}
+            "Quit"
+            [text {:font "MplusCode"}
+             "Ctrl+Q"]]]]
+
+         :edit
+         [text {} "Undo"])]])])
+
+(defn header
+  [{:level level} & children]
+  [padding {:top 20
+            :bottom (max 0 (- 6 (* (dec level) 4)))}
+   [block {}
+    [text {:size (max 20 (- 30 (* (dec level) 6)))
+           :font "EBGaramond"}
+     ;children]]])
+
+(defn ul
+  [props & children]
+  [padding {:top 6 :bottom 6}
+   [grid
+    {:direction :vertical}
+    ;children]])
+
+(defn li
+  [{:level level} & children]
+  [padding {:left (* 12 (dec level))}
+   [text
+    {}
+    "*"
+    ;children]])
+
+(def markdown-peg
+  ~{:text (* (not :eolf)
+             (accumulate
+               (some (if-not (+ :new-paragraph
+                                "\n*")
+                       (+ ':newline
+                          (if "\n" 1)
+                          '1)))))
+    :newline "  \n"
+    :header (/ (* '(some "#")
+                  :s*
+                  :text
+                  :eolf)
+               ,(fn [header-level
+                     m1]
+                  [header
+                   {:level (length header-level)}
+                   m1]))
+    :new-paragraph (* :eolf :eolf)
+    :eolf (+ "\n" -1)
+    :list (/ (some (* '(some "*") :text :eolf))
+             ,(fn [& stuff]
+                [ul {}
+                 ;(seq [[lvl t] :in (partition 2 stuff)]
+                    [li
+                     {:level (length lvl)}
+                     t])]))
+    :main (any (+ :list
+                  :header
+                  (/ :text
+                     ,(fn [t]
+                        [block {}
+                         [text {} t]]))
+                  :eolf
+                  1)) #(some (+ :header :eolf))
+})
+
+(defn md->hiccup
+  [md]
+  (peg/match markdown-peg md))
+
+(pp (md->hiccup ``
+* aoe
+** b
+``))
+
+(defn markdown
+  [props & children]
+  (def md (string/join children "\n"))
+
+  [block props
+   ;(md->hiccup md)])
+
+(defn other-stuff
+  [props]
+  [menu props]
+  [grid {:spacing 4}
+   [text {:font "MplusCode"}
+    (string/format "%.40m" props)]
+   [text {}
+    "hello\nyeaonice"]])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(def md ``
+# hello
+
+the above is a header
+
+and this is just some 
+markdown text
+
+## another header
+
+well aint that nice
+
+### a list too
+
+* the first point
+* the second point
+** and some subpoints
+``)
+
 # our "dom" tree
 (defn tree
   [props & _]
@@ -112,52 +288,26 @@
    {:right 10
     :left 500
     :top 40}
-   [background {:color 0x00000011}
-    [block {}
-     [padding {:all 5}
-      [button {:on-press (fn [self ev]
-                           (e/put! state :menu :file))}
-       [padding {:all 10}
-        [text {:size 15
-               :color 0x00ff00ff}
-         "File"]]]]
 
-     [padding {:all 5}
-      [button {:on-press (fn [self ev]
-                           (e/put! state :menu :edit))}
-       [padding {:all 10}
-        [text {:size 15
-               :color 0x00ff00ff}
-         "Edit"]]]
-      #
-]]
+   [padding {:top 30}
+    [grid {:spacing 2}
+     [markdown {} md]]]
+   #
+])
 
-    (when (props :menu)
-      [background {:color 0x0000ff33}
-       [block {:max-width 200}
-        (case (props :menu)
-          :file
-          [block {}
-           [button {:on-press
-                    (fn [self ev]
-                      (i/open-file (frp/text-area :gb))
-                      (e/put! state :menu nil))}
-            [grid {:space-between true}
-             "Open"
-             "Ctrl+O"]]
-           [button {:on-press (fn [& _]
-                                (i/quit (frp/text-area :gb)))}
-            [grid {:space-between true}
-             "Quit"
-             "Ctrl+Q"]]]
 
-          :edit
-          [text {} "Undo"])]])
 
-    [block {}
-     [text {} (string/format "%.40m" props)]]
-    #
-]])
+
+
+
+
+
+
+
+
+
+
+
 
 # hitting ctrl+l ... 
 
@@ -170,12 +320,14 @@
 ## TODO: recompile when props change
 (defn tree-compiled
   [props]
-  (compile
-    {:max-width (get-screen-width)
-     :max-height (get-screen-height)}
-    (tree props)))
+  (with-dyns [:text/font "Poppins"
+              :text/size 20]
+    (compile
+      {:max-width (get-screen-width)
+       :max-height (get-screen-height)}
+      [tree props])))
 
-(pp (tree-compiled state))
+#(pp (tree-compiled state))
 
 (defonce render-tree @{})
 
