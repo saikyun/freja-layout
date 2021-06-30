@@ -115,7 +115,7 @@
   (put state k nil))
 
 (merge-into state
-            {:menu :file
+            {#:menu :file  #uncomment to have a menu always open
              :event/changed true})
 
 (defn menu
@@ -294,8 +294,6 @@ well aint that nice
      [markdown {} md]]]
    #
 ])
-
-
 
 
 
