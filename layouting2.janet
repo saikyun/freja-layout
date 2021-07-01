@@ -3,6 +3,16 @@
 (import freja/frp)
 (import ./assets :as a)
 
+
+(defn in-rec?
+  [[px py] x y w h]
+  (and
+    (>= px x)
+    (<= px (+ x w))
+    (>= py y)
+    (<= py (+ y h))))
+
+
 (defn text
   [{:size size
     :font font
@@ -42,6 +52,17 @@
     :lines lines
     :width w
     :height h})
+
+
+
+
+
+
+
+
+
+
+
 
 (defn merge-props
   [props extra]
@@ -409,6 +430,12 @@ component designer and implementer.
 
   res)
 
+
+
+
+
+
+
 (defn background
   [props & children]
   (def {:color color} props)
@@ -432,6 +459,79 @@ component designer and implementer.
   [block {} [block {} ;children]]
   #
 )
+
+
+
+(defn button
+  [props & children]
+  (def off 0x00110033)
+  (def down 0x00ff00ff)
+  (def outside 0xff0000ff)
+
+  (def bg (compile props
+                   [background
+                    {:color off}
+                    ;children]))
+
+  (defn button-on-event [self ev]
+    (match ev
+      [:press pos]
+      (when (in-rec? pos
+                     (dyn :offset-x)
+                     (dyn :offset-y)
+                     (self :width)
+                     (self :height))
+        (put bg :color down)
+        (put self :down true))
+
+      [:drag pos]
+      (when (self :down)
+        (put bg :color outside)
+        (when
+          (in-rec? pos
+                   (dyn :offset-x)
+                   (dyn :offset-y)
+                   (self :width)
+                   (self :height))
+          (put bg :color down))
+
+        true)
+
+      [:double-click pos]
+      (when (in-rec? pos
+                     (dyn :offset-x)
+                     (dyn :offset-y)
+                     (self :width)
+                     (self :height))
+        (put bg :color 0x000000ff)
+        (put self :down true))
+
+      [:triple-click pos]
+      (when (in-rec? pos
+                     (dyn :offset-x)
+                     (dyn :offset-y)
+                     (self :width)
+                     (self :height))
+        (put bg :color 0x000000ff)
+        (put self :down true))
+
+      [:release pos]
+      (when (self :down)
+        (put bg :color off)
+        (when (in-rec? pos
+                       (dyn :offset-x)
+                       (dyn :offset-y)
+                       (self :width)
+                       (self :height))
+
+          (when-let [cb (props :on-press)]
+            (cb self ev)))
+        (put self :down false)
+        true)))
+
+  [@{:on-event button-on-event}
+   {}
+   bg])
 
 
 (defn single
