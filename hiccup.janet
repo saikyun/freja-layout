@@ -4,14 +4,17 @@
 (import ./layouting2 :prefix "")
 (import ./render-layouting2 :as r)
 
+(import spork/test)
+
 (defn compile-tree
-  [props hiccup]
+  [hiccup props]
+  #(test/timeit
   (with-dyns [:text/font "Poppins"
               :text/size 20]
     (compile
       {:max-width (get-screen-width)
        :max-height (get-screen-height)}
-      [hiccup props])))
+      [hiccup props]))) #)
 
 
 (var children-on-event nil)
@@ -62,7 +65,7 @@
 (defn new-component
   [name
    hiccup
-   state
+   props
    &keys {:initial-state is}]
   (def render-tree (or (named-components name)
                        (let [c @{}]
@@ -80,7 +83,7 @@
        :hiccup hiccup)
 
   (put render-tree
-       :tree (compile-tree state hiccup))
+       :tree (compile-tree hiccup props))
 
   (put render-tree
        :on-event
@@ -103,15 +106,31 @@
            [:drag _]
            (handle-ev (self :tree) ev)
 
+           #[:key-down _]
+           #(handle-ev (self :tree) ev)
+
+           #[:char _]
+           #(handle-ev (self :tree) ev)
+
+           [:scroll _]
+           (handle-ev (self :tree) ev)
+
            [:dt dt]
            (with-dyns [:dt dt]
              (r/render-elem (self :tree)))
 
-           '(= ev state)
+           #'(= ev props)
+           # if some state we are listening to
+           # has been changed
+           '(table? ev)
            (put self :tree (compile-tree
-                             state
-                             (self :hiccup))))))
+                             (self :hiccup)
+                             props)))))
 
-  (put-in frp/deps [:deps state] [render-tree])
+  (put-in frp/deps [:deps props] [render-tree])
   (frp/subscribe! frp/mouse render-tree)
-  (frp/subscribe-finally! frp/frame-chan render-tree))
+  #(frp/subscribe! frp/keyboard render-tree)
+  #(frp/subscribe! frp/chars render-tree)
+  (frp/subscribe-finally! frp/frame-chan render-tree)
+
+  render-tree)

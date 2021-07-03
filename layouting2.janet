@@ -54,32 +54,28 @@
     :height h})
 
 
-
-
-
-
-
-
-
-
-
-
 (defn merge-props
   [props extra]
   (def new-props (merge-into @{} props))
+
+  (update new-props :height
+          |(-> (if $
+                 $
+                 (extra :height)) # height overrides max-height
+))
 
   (update new-props :max-width
           |(-> (if $
                  (min $ (extra :max-width))
                  (extra :max-width))
-               (max (get props :width 0)) # width overrides max-width
+               (max (get new-props :width 0)) # width overrides max-width
 ))
 
   (update new-props :max-height
           |(-> (if $
                  (min $ (extra :max-height))
                  (extra :max-height))
-               (max (get props :height 1)) # height overrides max-height
+               (max (get new-props :height 1)) # height overrides max-height
 ))
 
   new-props)
@@ -102,7 +98,7 @@ In body the variable $child is also available, which is set to the current child
 of each iteration.
 ``
   [cs max-width & body]
-  (with-syms [$x $y $row-h $w $h]
+  (with-syms [$x $y $row-h $w $h $xi]
     ~(do
        (var $left 0)
        (var $right 0)
@@ -115,6 +111,8 @@ of each iteration.
        (var ,$y 0)
        (var ,$row-h 0)
 
+       (var ,$xi 0)
+
        (loop [$i :range [0 (length ,cs)]
               :let [$child (,cs $i)]]
          (def ,$w ($child :width))
@@ -126,6 +124,7 @@ of each iteration.
                             ,max-width)))
            (+= ,$y ,$row-h)
            (set ,$x 0)
+           (set ,$xi 0)
            (set ,$row-h 0))
 
          (set $top ,$y)
@@ -253,8 +252,10 @@ Sets the x/y-offset of the elements.
     (array/push new-children (if (table? c)
                                c
                                (compile
-                                 {:max-width (props :max-width)
-                                  :max-height (props :max-height)}
+                                 {:max-width (min (props :max-width)
+                                                  (get props :width 99999999))
+                                  :max-height (min (props :max-height)
+                                                   (get props :height 99999999))}
                                  c))))
 
   new-children)
@@ -273,7 +274,9 @@ Sets the x/y-offset of the elements.
 
   (def children (compile-children props children))
 
-  (default height ((flow-elements max-width children) 1))
+  (def [_ h] (flow-elements max-width children))
+
+  (default height h)
   (assert width "width must be set")
 
   @{:width width
@@ -301,6 +304,8 @@ Sets the x/y-offset of the elements.
       (update :width |(or $ w))
       (update :height |(or $ h))
       (put :children children)))
+
+(import spork/test)
 
 (varfn compile
   ````
@@ -372,68 +377,69 @@ this complexity is worth the ease of use for the
 component designer and implementer.
 ````
   [context hiccup]
-  (def hiccup (if (string? hiccup)
+  (def hiccup (if (or (buffer? hiccup) (string? hiccup))
                 [text {} hiccup]
                 hiccup))
+  (def res
+    #(test/timeit
+    (do
+      (def [f-or-table props] hiccup)
 
-  (def [f-or-table props] hiccup)
+      (assert (or (table? props) (struct? props))
+              (string "props must be table or struct\n"
+                      (string/format "%.40M" props)
+                      "\nis not, full form:\n"
+                      (string/format "%.40M" props)))
 
-  (assert (or (table? props) (struct? props))
-          (string "props must be table or struct\n"
-                  (string/format "%.40M" props)
-                  "\nis not, full form:\n"
-                  (string/format "%.40M" props)))
+      (assert context "context must be defined")
 
-  (assert context "context must be defined")
+      (def children (drop 2 hiccup))
+      # (tracev hiccup)
+      (def res (if (function? f-or-table)
+                 (f-or-table (merge-props props context)
+                             ;children)
 
-  (def children (drop 2 hiccup))
-  # (tracev hiccup)
-  (def res (if (function? f-or-table)
-             (f-or-table (merge-props props context)
-                         ;children)
+                 (add-children
+                   f-or-table
+                   children
+                   # if max-width or width is defined in f-or-table (i.e. the user
+                   # explicitly set a width / max-width) we use that
+                   # otherwise, use the max-width coming from the parent of
+                   # f-or-table, that is (context :max-width)
+                   :max-width (get f-or-table :max-width
+                                   (get f-or-table :width
+                                        (context :max-width)))
+                   :max-height (get f-or-table :max-height
+                                    (get f-or-table :height
+                                         (context :max-height))))))
 
-             (add-children
-               f-or-table
-               children
-               # if max-width or width is defined in f-or-table (i.e. the user
-               # explicitly set a width / max-width) we use that
-               # otherwise, use the max-width coming from the parent of
-               # f-or-table, that is (context :max-width)
-               :max-width (get f-or-table :max-width
-                               (get f-or-table :width
-                                    (context :max-width)))
-               :max-height (get f-or-table :max-height
-                                (get f-or-table :height
-                                     (context :max-height))))))
+      (def res (cond (indexed? res) # tuple or array
+                 (compile context res)
 
-  (def res (cond (indexed? res) # tuple or array
-             (compile context res)
+                 res))
 
-             res))
+      (assert (table? res) (string/join ["final result of dom-function must be table"
+                                         (string f-or-table)
+                                         "was not"]
+                                        "\n"))
 
-  (assert (table? res) (string/join ["final result of dom-function must be table"
-                                     (string f-or-table)
-                                     "was not"]
-                                    "\n"))
+      (assert (res :width)
+              (string/join ["final result of dom-function must have width"
+                            (string/format "%.40m" res)
+                            "did not"]
+                           "\n"))
 
-  (assert (res :width)
-          (string/join ["final result of dom-function must have width"
-                        (string/format "%.40m" res)
-                        "did not"]
-                       "\n"))
+      (assert (res :height)
+              (string/join ["final result of dom-function must have width"
+                            (string/format "%.40m" res)
+                            "did not"]
+                           "\n"))
 
-  (assert (res :height)
-          (string/join ["final result of dom-function must have width"
-                        (string/format "%.40m" res)
-                        "did not"]
-                       "\n"))
+      res)) #)
+
+  #(pp hiccup)
 
   res)
-
-
-
-
-
 
 
 (defn background
@@ -461,7 +467,6 @@ component designer and implementer.
 )
 
 
-
 (defn button
   [props & children]
   (def off 0x00110033)
@@ -475,7 +480,9 @@ component designer and implementer.
 
   (defn button-on-event [self ev]
     (match ev
-      [:press pos]
+      ['(or (= :press (first ev))
+            (= :double-click (first ev))
+            (= :triple-click (first ev))) pos]
       (when (in-rec? pos
                      (dyn :offset-x)
                      (dyn :offset-y)
@@ -496,24 +503,6 @@ component designer and implementer.
           (put bg :color down))
 
         true)
-
-      [:double-click pos]
-      (when (in-rec? pos
-                     (dyn :offset-x)
-                     (dyn :offset-y)
-                     (self :width)
-                     (self :height))
-        (put bg :color 0x000000ff)
-        (put self :down true))
-
-      [:triple-click pos]
-      (when (in-rec? pos
-                     (dyn :offset-x)
-                     (dyn :offset-y)
-                     (self :width)
-                     (self :height))
-        (put bg :color 0x000000ff)
-        (put self :down true))
 
       [:release pos]
       (when (self :down)
@@ -602,11 +591,50 @@ component designer and implementer.
   [block {:width (props :max-width) :height h}
    ;children])
 
+(defn predefined-height
+  [[o props]]
+  (if (table? o)
+    (o :heigth)
+    (props :height)))
+
 (defn space-between
   [props & children]
-  (def children (compile-children props children))
+  (def mh (min (props :max-height) (get props :height 99999)))
 
   (def vertical (= :vertical (props :direction)))
+
+  (def children
+    (if (not vertical)
+      (compile-children props children)
+      (do
+        (def children (filter truthy? children))
+
+        (var available-height mh)
+        (var nof-flexible-children (length children))
+
+        (loop [c :in children
+               :let [ph (predefined-height c)]]
+          (when ph
+            (-= available-height ph)
+            (-- nof-flexible-children)))
+
+        (var flexible-height-per-child (/ available-height nof-flexible-children))
+
+        (var new-children @[])
+
+        (loop [c :in children
+               :let [ph (predefined-height c)]]
+          (array/push
+            new-children
+            (if (table? c)
+              c
+              (compile
+                {:max-width (props :max-width)
+                 :max-height mh
+                 :height (unless ph flexible-height-per-child)} # if height isn't predefined, set the calculated height
+                c))))
+
+        new-children)))
 
   (when (and (not (props :height))
              vertical)

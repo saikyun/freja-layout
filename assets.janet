@@ -1,5 +1,4 @@
 (use jaylib)
-(import freja/font :as f)
 (import spork/path)
 (import freja/fonts :as f)
 
@@ -119,6 +118,8 @@ Shows information about a font, such as which styles are loaded and at which siz
       (put info k v)))
   info)
 
+(import spork/test)
+
 (defn font
   ``
 Given a font `name` and `size`, returns the loaded font to be used with jaylib font rendering.
@@ -131,6 +132,8 @@ To get information about a font (e.g. loaded styles), use `font-info`.
 Leaving `:style` empty will use the `:default-style` for the font.
 ``
   [name size &keys {:style style}]
+  #(print "`(font  " name " " size ")`")
+  #(test/timeit (do
   (def font (fonts name))
 
   (assert font
@@ -139,7 +142,7 @@ Leaving `:style` empty will use the `:default-style` for the font.
   (default style (font :default-style))
 
   (or (get-in font [style size])
-      (load-font-with-size name size :style style)))
+      (load-font-with-size name size :style style))) #))
 
 (comment
   (do
