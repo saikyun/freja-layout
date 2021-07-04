@@ -1,3 +1,5 @@
+# hitting ctrl+l
+
 (import ./layouting2 :prefix "" :fresh true)
 (import freja/events :as e)
 (import ./hiccup)
@@ -8,31 +10,37 @@
 
 (defonce sh-state @{})
 
+(def parse-spaces
+  ~{:escaped-string ``\"``
+    :fake-string (* "\"" '(any (+ (if ``\"`` 1)
+                                  (if-not ``"`` 1)))
+                    ``"``)
+    :real-string (* "'" '(any (if-not ``'`` 1))
+                    ``'``)
+    :other '(some :S)
+    :main (any (+ :real-string :fake-string :other :s+))})
+
+(pp (peg/match parse-spaces ``clj -e '"123 \" HAHA"'``))
+
+#(peg/match '(* (if-not ``\`` 1) ``\"``) `` \"``)
+
 (defn run!
   [state in]
-  (array/clear (state :history))
-
   (try (do
-         (def p (os/spawn (string/split " " in)
+         (def p (os/spawn #(peg/match parse-spaces in)
+                          (tracev ["sh" "-c" (string in)])
                           :p {:in :pipe :out :pipe}))
          (def res (:read (p :out) :all))
          (:wait p)
 
-         (tracev res)
-
-         (gb/replace-content (get-in state [:text-area :gb]) res)
-
-         (comment
-           (e/update! state :history array/push [block {}
-                                                 (string "$ " in)])
-           (e/update! state :history array/push [block {}
-                                                 res])
-
-           (e/update! state :input buffer/clear)))
+         (gb/replace-content
+           (get-in state [:text-area :gb])
+           res))
     ([err fib]
       (debug/stacktrace fib err)
-      (gb/replace-content (get-in state [:text-area :gb]) err))))
-
+      (gb/replace-content
+        (get-in state [:text-area :gb])
+        err))))
 
 (defonce text-area-state (frp/default-text-area))
 (put-in text-area-state [:gb :text] @"Welcome! :)")
@@ -41,9 +49,12 @@
 
 (print "hej")
 (defonce input-state
-  (frp/default-text-area
-    :extra-binds @{:enter
-                   (fn [self] (run! sh-state (gb/content self)))}))
+  @{})
+(merge-into input-state
+            (frp/default-text-area
+              :extra-binds @{:enter
+                             (fn [self]
+                               (run! sh-state (gb/content self)))}))
 (put-in input-state [:gb :background] 0x00000011)
 (put input-state :id :input)
 
@@ -118,7 +129,8 @@
      :width (get-in text-area-state [:gb :size 0])
      :height (get-in text-area-state [:gb :size 1])}])
 
-(defn menu
+
+(defn shell
   [props & _]
   [padding
    {:top 30
@@ -127,18 +139,19 @@
     [padding {:all 5}
      [grid {:height 660
             :direction :vertical
-            :space-between true}
+            :space-between true
+            #:spacing 2
+}
 
       [text-area {:state text-area-state}]
 
-      #       [block {}
-      #        ;(props :history)]
+      [text-area {:height 20
+                  :state input-state}]]]]])
 
-      [text-area {:height 20 :state input-state}]]]]])
 
 (set c (hiccup/new-component
-         :menu
-         menu
+         :shell
+         shell
          sh-state))
 
 (frp/subscribe! state/focus123 c)
