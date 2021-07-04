@@ -1,21 +1,31 @@
 (var apply-sizing nil)
 
-(defn shrink-sizing
+(defn wrap-sizing
   ``
-The element "shrinks" around its children,
+The element "wraps" around its children,
 hugging them as closely as it can.
 
 When children width passes max-width,
 adds a new row.
 ``
   [el]
-  (def {:children cs :offset offset :min-width min-width} el)
+  (def {:children cs
+        :offset offset
+        :min-width min-width
+        :width width
+        :height height} el)
   (def [top right bottom left] (or offset [0 0 0 0]))
 
-  (def max-width (- (dyn :max-width) left right))
+  (def max-width (- (or width (dyn :max-width))
+                    left
+                    right))
+
+  (def max-height (- (or height (dyn :max-height))
+                     top
+                     bottom))
 
   (with-dyns [:max-width max-width
-              :max-height (- (dyn :max-height) top bottom)]
+              :max-height max-height]
     (var x 0)
     (var y 0)
     (var el-w 0)
@@ -36,8 +46,8 @@ adds a new row.
 )
 
     (-> el
-        (put :width el-w)
-        (put :height (+ y row-h)))))
+        (put :width (or width el-w))
+        (put :height (or height (+ y row-h))))))
 
 (varfn apply-sizing
   [el]
@@ -54,18 +64,18 @@ adds a new row.
     el
 
     (case sizing
-      :shrink (shrink-sizing el)
-      :expand-w (-> (shrink-sizing el)
+      :wrap (wrap-sizing el)
+      :expand-w (-> (wrap-sizing el)
                     (put :width (dyn :max-width)))
-      :expand-h (-> (shrink-sizing el)
+      :expand-h (-> (wrap-sizing el)
                     (put :height (dyn :max-height)))
       :expand (-> el
                   (put :width (dyn :max-width))
                   (put :height (dyn :max-height)))
       (if (nil? sizing)
         (do
-          (print (string "no sizing, using :shrink for " (string/format "%.40M" el)))
-          (shrink-sizing el))
+          (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
+          (wrap-sizing el))
         (sizing el)))
 
     # set width to highest of current width and min-width
@@ -200,6 +210,24 @@ Returns the biggest min-width in an element tree.
   #=> [310 40]
 
 
+  (size (tracev (with-dyns [:max-width 300
+                    :max-height 400]
+          (row-sizing @{:children [@{:width 40
+                                     :sizing :wrap
+                                     :props @{:width 40}
+                                     :children [@{:sizing text-sizing
+                                                  :text "aoeaoeaoeoaeoouhhue nsoaentshetnsoahutnse hoatnsuheaonsae"
+                                                  :props @{}
+                                                  :children []}]}
+                                   @{:width 100
+                                     :height 40
+                                     :props {:width 100
+                                             :height 40}
+                                     :children []}]}
+                      #
+))))
+  #=> [140 40]
+
   (let [res (with-dyns [:max-width 300
                         :max-height 400]
               (row-sizing @{:children [@{:props @{:width [1]}
@@ -207,7 +235,7 @@ Returns the biggest min-width in an element tree.
                                          :children []}
                                        @{:props @{:width 30
                                                   :height 40}
-                                         :sizing :shrink
+                                         :sizing :wrap
                                          :children []
                                          :width 30
                                          :height 40}
