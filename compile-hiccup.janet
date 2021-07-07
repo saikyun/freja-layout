@@ -25,6 +25,18 @@
       (add-default-props props)
       (put :sizing :expand-w)))
 
+(defn row
+  [props & children]
+  (-> (dyn :element)
+      (add-default-props props)
+      (put :sizing :row)))
+
+(defn vertical
+  [props & children]
+  (-> (dyn :element)
+      (add-default-props props)
+      (put :sizing :vertical)))
+
 (defn text
   [props & children]
 

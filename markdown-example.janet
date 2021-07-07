@@ -3,6 +3,7 @@
 (import freja/events :as e)
 (import ./hiccup)
 (import ./markdown :prefix "")
+(use freja/defonce)
 
 # example markdown
 (def md ``

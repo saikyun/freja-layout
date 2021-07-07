@@ -38,6 +38,10 @@ adds a new row.
         (+= y row-h)
         (set row-h 0))
 
+      #(put c :position (or (c :position) @[0 0]))
+      #(put-in c [:position 0] x)
+      #(put-in c [:position 1] y)
+
       (+= x w)
       (set row-h (max row-h h))
 
@@ -47,7 +51,11 @@ adds a new row.
 
     (-> el
         (put :width (or width (+ left right el-w)))
-        (put :height (or height (+ top bottom y row-h))))))
+        (put :content-width max-width)
+        (put :height (or height (+ top bottom row-h y))))))
+
+(var row-sizing nil)
+(var vertical-sizing nil)
 
 (varfn apply-sizing
   [el]
@@ -72,6 +80,8 @@ adds a new row.
       :expand (-> el
                   (put :width (dyn :max-width))
                   (put :height (dyn :max-height)))
+      :row (row-sizing el)
+      :vertical (vertical-sizing el)
       (if (nil? sizing)
         (do
           (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
@@ -83,8 +93,6 @@ adds a new row.
     (update el :height max mh)
 
     el))
-
-(var row-sizing nil)
 
 (defn min-width
   ``
@@ -106,8 +114,6 @@ Returns the biggest min-width in an element tree.
                    ((row-sizing el) :width))
             (max ;(map min-width cs)))
           0))))
-
-(var vertical-sizing nil)
 
 (defn min-height
   ``
@@ -190,6 +196,8 @@ Returns the biggest min-height in an element tree.
           (+= el-h (c :height))))))
 
   (-> el
+      (put :content-width el-w)
+      (put :content-height el-h)
       (put :width el-w)
       (put :height el-h))
   #
