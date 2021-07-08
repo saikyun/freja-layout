@@ -3,62 +3,16 @@
 (import ./jaylib-sizing :as js :fresh true)
 (import ./jaylib-rendering :as jr :fresh true)
 (import ./assets :as a)
+(import ./hiccup2 :as h)
+(import freja/events :as e)
 (import freja/frp)
 (use jaylib)
 
-(print)
-(print "beginning of test-hiccup")
 
 (setdyn :pretty-format "%.40M")
 
-
-(defn in-rec?
-  [[px py] x y w h]
-  (and
-    (>= px x)
-    (<= px (+ x w))
-    (>= py y)
-    (<= py (+ y h))))
-
-
-(defn clickable
-  [props & _]
-  (-> (dyn :element)
-      (ch/add-default-props props)
-      (put :on-event
-           (fn [self ev]
-             #(print "testing " (get-in self [:props :id]))
-
-             (def [kind] ev)
-             (def pos (if (= kind :scroll)
-                        (ev 2)
-                        (ev 1)))
-
-             (def in?
-               (in-rec? pos
-                        (dyn :offset-x)
-                        (dyn :offset-y)
-                        (self :width)
-                        (self :height)))
-
-             (match ev
-               [:press pos]
-               (when in?
-                 (put self :down true)
-                 true)
-
-               [:release pos]
-               (when (self :down)
-                 (when in? ((props :on-click) ev))
-
-                 (put self :down false)
-
-                 true)
-
-               false)))))
-
 (def tags @{:block @{:f ch/block}
-            :clickable @{:f clickable}
+            :clickable @{:f ch/clickable}
             :text @{:f ch/text
                     :sizing js/text-sizing
                     :render jr/text-render}
@@ -68,235 +22,38 @@
             :background @{:f ch/background
                           :render jr/background-render}})
 
-(defmacro with-matrix
-  [& body]
-  ~(do (rl-push-matrix)
+(defn hiccup
+  [props]
+  (pp props)
 
-     (try (do ,;body
-            (rl-pop-matrix))
-       ([err]
-         (do
-           (rl-pop-matrix)
-           (error err))))))
+  [:padding {:top 30 :left 700}
+   "habaaaoehcreohcaoehehlh"
+   [:text
+    {:size 40}
+    (props :cat)]
+   [:clickable {:id "cool"
+                :on-click (fn [ev]
+                            (e/put! props :cat "Wat")
+                            (print "hello"))}
+    [:background {:color 0xff0000ff}
+     "Cool"]]
+   [:background {:color 0x00ff00ff}
+    [:padding {:left 30 :top 20}
+     [:clickable
+      {:id "yeah"
+       :on-click (fn [ev]
+                   (e/put! props :cat "Kebabsan")
+                   (print "YEAAAH"))}
+      "YEAH"]]]
+   [:block {} "hahaha"]
+   "k"
+   "meh"])
 
-(defmacro with-translation
-  [[s v] & body]
-
-  ~(let [,s ,v]
-     (if ,s
-       (with-matrix
-         (if (= 4 (length ,s))
-           (rl-translatef (,s 3) (,s 0) 0)
-           (rl-translatef (,s 0) (,s 1) 0))
-         ,;body)
-       (do ,;body))))
-
-(var flow-render-children nil)
-
-(defn noop
-  [_]
-  nil)
-
-(defn render
-  [el]
-  (def {:render-children render-children
-        :render render}
-    el)
-
-  (default render noop)
-  (default render-children flow-render-children)
-
-  #(print (el :tag))
-  #(tracev p)
-  (render el)
-
-  (with-translation [o (el :offset)]
-    #(tracev o)
-    (render-children el)))
-
-(varfn flow-render-children
-  [{:children cs
-    :tag tag
-    :content-width content-width}]
-
-  (unless (empty? cs)
-    #(print "gonna print children")
-
-    (var x 0)
-    (var y 0)
-    (var row-h 0)
-
-    (rl-push-matrix)
-
-    (rl-push-matrix)
-    (loop [c :in cs
-           :let [{:width w
-                  :height h} c]]
-
-      #(print "tag: " (c :tag))
-
-      (when (and (pos? x)
-                 (> (+ x w) content-width))
-        (rl-pop-matrix)
-
-        (set x 0)
-        (+= y row-h)
-
-        (rl-translatef 0 row-h 0)
-
-        (set row-h 0)
-
-        (rl-push-matrix))
-
-      (render c)
-
-      # (print "pos: " x " " y)
-
-      (rl-translatef w 0 0)
-
-      (+= x w)
-
-      (set row-h (max row-h h))
-      #
-)
-    (rl-pop-matrix)
-    (rl-pop-matrix)))
-
-
-(def el123
-  (tracev
-    (with-dyns [:tags tags
-                :text/font "Poppins"
-                :text/size 14]
-      (ch/compile
-        [:padding {:left 700 :top 35}
-         #[:block {:width 100}
-         [:background {:color 0xff000011}
-          [:padding {:left 30 :bottom 20 :right 30 :top 100}
-           [:block {} "dog"]
-           [:clickable {:on-event (fn [ev] (print "hello: ")
-                                    (pp ev))}
-            "Cool"]
-           [:block {:width 50}
-            [:row {} "a " "b " "c " "d " "f " "h " "i " "j " "k " "l " "i "]
-            [:vertical {} "a " "b " "c " "d " "f " "h " "i " "j " "k " "l " "i "]]
-           #[:block {}
-           [:background {:color :red}
-            [:padding {:top 20
-                       :left 10}
-             "hahahahaahhceohhu"]]
-           #]
-           "yo"
-           [:background {:color :blue}
-            "hej"]]] #]
-]))))
-
-(def el
-  (with-dyns [:tags tags
-              :text/font "Poppins"
-              :text/size 30
-              :text/line-height 1]
-    (ch/compile
-      [:padding {:top 30 :left 700}
-       "habaaaoehcreohcaoehehlh"
-       [:clickable {:id "cool"
-                    :on-click (fn [ev]
-                                (print "hello"))}
-        [:background {:color 0xff0000ff}
-         "Cool"]]
-       [:background {:color 0x00ff00ff}
-        [:padding {:left 30 :top 20}
-         [:clickable
-          {:id "yeah"
-           :on-click (fn [ev]
-                       (print "YEAAAH"))}
-          "YEAH"]]]
-       [:block {} "hahaha"]
-       "k"
-       "meh"])))
-
-(import freja/defonce :prefix "")
-
-(defonce render-tree @{})
-
-
-(var children-on-event nil)
-
-(defn elem-on-event
-  [e ev]
-  # traverse children first
-  # will return true if the event is taken
-  (if (with-dyns [:offset-x (+ (dyn :offset-x)
-                               (get-in e [:offset 3] 0))
-                  :offset-y (+ (dyn :offset-y)
-                               (get-in e [:offset 0] 0))]
-        (children-on-event e ev))
-    true
-
-    (when (e :on-event)
-      (:on-event e ev))))
-
-(varfn children-on-event
-  [{:children cs
-    :content-width content-width} ev]
-  (var taken false)
-
-  (var x 0)
-  (var y 0)
-  (var row-h 0)
-
-  (loop [c :in cs
-         :let [{:width w
-                :height h} c]
-         :until taken]
-
-    #(print "tag: " (c :tag))
-
-    (when (and (pos? x)
-               (> (+ x w) content-width))
-      (set x 0)
-      (+= y row-h)
-      (set row-h 0))
-
-    (with-dyns [:offset-x (+ (dyn :offset-x) x)
-                :offset-y (+ (dyn :offset-y) y)]
-      (set taken (elem-on-event c ev)))
-
-    # (print "pos: " x " " y)
-
-    (+= x w)
-
-    (set row-h (max row-h h))
-    #
-)
-
-  taken)
-
-(defn handle-ev
-  [tree ev]
-  (with-dyns [:offset-x 0
-              :offset-y 0]
-    (when (elem-on-event tree ev)
-      (frp/push-callback! ev (fn [])))))
-
-#(tracev
-(with-dyns [:max-width (get-screen-width)
-            :max-height (get-screen-height)]
-  (s/apply-sizing el)) #)
-
-(merge-into
-  render-tree
-  @{:draw (fn [self dt]
-            #(print)
-            #(print "start")
-            (draw-rectangle-rec [720 44 5 20] :green)
-            (render el)
-            #
-)
-    :on-event (fn [self ev]
-                (match ev
-                  [:dt dt] (:draw self dt)
-                  (handle-ev el ev)))})
-
-(frp/subscribe-finally! frp/frame-chan render-tree)
-(frp/subscribe! frp/mouse render-tree)
+(h/new-layer :test-layer
+             hiccup
+             @{:cat "Truls"}
+             :render jr/render
+             :tags tags
+             :text/font "Poppins"
+             :max-width 800
+             :max-height 600)

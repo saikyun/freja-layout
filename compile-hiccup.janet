@@ -5,6 +5,14 @@
                 ~(put ,k ,v))
               (partition 2 kvs))))
 
+(defn in-rec?
+  [[px py] x y w h]
+  (and
+    (>= px x)
+    (<= px (+ x w))
+    (>= py y)
+    (<= py (+ y h))))
+
 (defn add-default-props
   [e props]
   (def {:width width
@@ -36,6 +44,43 @@
   (-> (dyn :element)
       (add-default-props props)
       (put :sizing :vertical)))
+
+
+(defn clickable
+  [props & _]
+  (-> (dyn :element)
+      (add-default-props props)
+      (put :on-event
+           (fn [self ev]
+             #(print "testing " (get-in self [:props :id]))
+
+             (def [kind] ev)
+             (def pos (if (= kind :scroll)
+                        (ev 2)
+                        (ev 1)))
+
+             (def in?
+               (in-rec? pos
+                        (dyn :offset-x)
+                        (dyn :offset-y)
+                        (self :width)
+                        (self :height)))
+
+             (match ev
+               [:press pos]
+               (when in?
+                 (put self :down true)
+                 true)
+
+               [:release pos]
+               (when (self :down)
+                 (when in? ((props :on-click) ev))
+
+                 (put self :down false)
+
+                 true)
+
+               false)))))
 
 (defn text
   [props & children]

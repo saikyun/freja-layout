@@ -16,7 +16,6 @@
        :max-height (get-screen-height)}
       [hiccup props]))) #)
 
-
 (var children-on-event nil)
 
 (defn elem-on-event
