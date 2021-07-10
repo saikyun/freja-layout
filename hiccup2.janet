@@ -2,6 +2,7 @@
 (import freja/frp)
 (import ./compile-hiccup :as ch)
 (import ./sizing :as s)
+(import spork/test)
 
 (defonce render-tree @{})
 
@@ -75,16 +76,27 @@
   [hiccup props &keys {:max-width max-width
                        :max-height max-height
                        :tags tags
-                       :text/font text/font}]
+                       :text/font text/font
+                       :text/size text/size
+                       :old-root old-root}]
 
-  (with-dyns [:tags tags
-              :text/font text/font]
-    (def root (ch/compile (hiccup props)))
+  #  (put props :compilation/changed true)
+
+  (with-dyns [:text/font text/font
+              :text/size text/size]
+    (print "compiling tree...")
+    (def root (test/timeit (ch/compile (hiccup props)
+                                       :tags tags
+                                       :element old-root)))
 
     (def root-with-sizes
       (with-dyns [:max-width max-width
-                  :max-height max-height]
+                  :max-height max-height
+                  :sized-width @{}
+                  :sized-height @{}]
         (s/apply-sizing root)))
+
+    (put props :compilation/changed false)
 
     root-with-sizes)
 
@@ -109,7 +121,8 @@
           :max-width max-width
           :max-height max-height
           :tags tags
-          :text/font text/font}]
+          :text/font text/font
+          :text/size text/size}]
 
   (def render-tree (or (named-layers name)
                        (let [c @{}]
@@ -153,7 +166,9 @@
                              :tags tags
                              :max-width (self :max-width)
                              :max-height (self :max-height)
-                             :text/font text/font)))
+                             :text/font text/font
+                             :text/size text/size
+                             :old-root (self :root))))
 
                     (handle-ev (self :root) ev)))})
 

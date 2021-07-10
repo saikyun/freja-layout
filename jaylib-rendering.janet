@@ -25,8 +25,6 @@
   (draw-rectangle 0 0 width height color))
 
 
-
-
 (use jaylib)
 
 (defmacro with-matrix
@@ -35,10 +33,12 @@
 
      (try (do ,;body
             (rl-pop-matrix))
-       ([err]
+       ([err fib]
          (do
            (rl-pop-matrix)
-           (error err))))))
+           (debug/stacktrace fib err)
+           #(error err)
+)))))
 
 (defmacro with-translation
   [[s v] & body]
@@ -72,6 +72,7 @@
   (render el)
 
   (with-translation [o (el :offset)]
+    #(pp (el :offset))
     #(tracev o)
     (render-children el)))
 
@@ -87,39 +88,46 @@
     (var y 0)
     (var row-h 0)
 
-    (rl-push-matrix)
+    (try
+      (do
+        (rl-push-matrix)
 
-    (rl-push-matrix)
-    (loop [c :in cs
-           :let [{:width w
-                  :height h} c]]
+        (rl-push-matrix)
 
-      #(print "tag: " (c :tag))
+        (loop [c :in cs
+               :let [{:width w
+                      :height h} c]]
 
-      (when (and (pos? x)
-                 (> (+ x w) content-width))
-        (rl-pop-matrix)
+          #(print "tag: " (c :tag))
 
-        (set x 0)
-        (+= y row-h)
+          (when (and (pos? x)
+                     (> (+ x w) content-width))
+            (rl-pop-matrix)
 
-        (rl-translatef 0 row-h 0)
+            (set x 0)
+            (+= y row-h)
 
-        (set row-h 0)
+            (rl-translatef 0 row-h 0)
 
-        (rl-push-matrix))
+            (set row-h 0)
 
-      (render c)
+            (rl-push-matrix))
 
-      # (print "pos: " x " " y)
+          (render c)
 
-      (rl-translatef w 0 0)
+          # (print "pos: " x " " y)
 
-      (+= x w)
+          (rl-translatef w 0 0)
 
-      (set row-h (max row-h h))
-      #
+          (+= x w)
+
+          (set row-h (max row-h h))
+          #
 )
-    (rl-pop-matrix)
-    (rl-pop-matrix)))
-
+        (rl-pop-matrix)
+        (rl-pop-matrix))
+      ([err fib]
+        (rl-pop-matrix)
+        (rl-pop-matrix)
+        #        (error err)
+        (debug/stacktrace fib err)))))

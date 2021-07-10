@@ -1,5 +1,32 @@
 (var apply-sizing nil)
 
+(defn preset-width
+``
+In order to avoid caching problems,
+widths and heights that have been compiled after tree
+compilation but before rendering (i.e. before the whole tree is resized),
+are stored in (dyn :sized-width) and (dyn :sized-height).
+
+So what does this mean?
+It means that if an element has a width is (dyn :sized-width),
+it doesn't need to be recalculated.
+``
+  [el]
+  (or ((dyn :sized-width) el)
+      (when-let [w (get-in el [:props :width])]
+        (when (number? w)
+          (put (dyn :sized-width) el w)
+          w))))
+
+(defn preset-height
+  [el]
+  (or
+    ((dyn :sized-height) el)
+    (when-let [h (get-in el [:props :height])]
+      (when (number? h)
+        (put (dyn :sized-height) el h)
+        h))))
+
 (defn wrap-sizing
   ``
 The element "wraps" around its children,
@@ -11,9 +38,11 @@ adds a new row.
   [el]
   (def {:children cs
         :offset offset
-        :min-width min-width
-        :width width
-        :height height} el)
+        :min-width min-width} el)
+
+  (def width (preset-width el))
+  (def height (preset-height el))
+
   (def [top right bottom left] (or offset [0 0 0 0]))
 
   (def max-width (- (or width (dyn :max-width))
@@ -31,7 +60,9 @@ adds a new row.
     (var el-w 0)
     (var row-h 0)
     (loop [c :in cs
-           :let [{:width w :height h} (apply-sizing c)]]
+           :let [_ (apply-sizing c)
+                 w (preset-width c)
+                 h (preset-height c)]]
       (when (and (pos? x)
                  (>= (+ x w) max-width))
         (set x 0)
@@ -49,10 +80,17 @@ adds a new row.
       #
 )
 
+    ## TODO KEEP ADDING SIZED-WIDTH
+
+    (def w (or width (+ left right el-w)))
+    (def h (or height (+ top bottom row-h y)))
+    (put (dyn :sized-width) el w)
+    (put (dyn :sized-height) el h)
+
     (-> el
-        (put :width (or width (+ left right el-w)))
+        (put :width w)
         (put :content-width max-width)
-        (put :height (or height (+ top bottom row-h y))))))
+        (put :height h))))
 
 (var row-sizing nil)
 (var vertical-sizing nil)
@@ -60,39 +98,44 @@ adds a new row.
 (varfn apply-sizing
   [el]
   (def {:sizing sizing
-        :width w
-        :height h
         :min-width mw
         :min-height mh} el)
+
+  (def width (preset-width el))
+  (def height (preset-height el))
 
   (default mw 0)
   (default mh 0)
 
-  (cond (and w h)
+  #     TODO: figure out a way to reenable this
+  (cond (and width height)
     el
 
-    (case sizing
-      :wrap (wrap-sizing el)
-      :expand-w (-> (wrap-sizing el)
-                    (put :width (dyn :max-width)))
-      :expand-h (-> (wrap-sizing el)
-                    (put :height (dyn :max-height)))
-      :expand (-> el
-                  (put :width (dyn :max-width))
-                  (put :height (dyn :max-height)))
-      :row (row-sizing el)
-      :vertical (vertical-sizing el)
-      (if (nil? sizing)
-        (do
-          (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
-          (wrap-sizing el))
-        (sizing el)))
+    (do
+      (case sizing
+        :wrap (wrap-sizing el)
+        :expand-w (do (wrap-sizing el)
+                    (put (dyn :sized-width) el (dyn :max-width)))
+        :expand-h (do (wrap-sizing el)
+                    (put (dyn :sized-height) el (dyn :max-height)))
+        :expand (do (put (dyn :sized-width) el (dyn :max-width))
+                  (put (dyn :sized-height) el (dyn :max-height)))
+        :row (row-sizing el)
+        :vertical (vertical-sizing el)
+        (if (nil? sizing)
+          (do
+            (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
+            (wrap-sizing el))
+          (sizing el)))
 
-    # set width to highest of current width and min-width
-    (update el :width max mw)
-    (update el :height max mh)
+      # set width to highest of current width and min-width
+      (def width (max mw (preset-width el)))
+      (def height (max mh (preset-height el)))
 
-    el))
+      (put (dyn :sized-width) el width)
+      (put (dyn :sized-height) el height)
+
+      el)))
 
 (defn min-width
   ``
@@ -101,17 +144,17 @@ Returns the biggest min-width in an element tree.
   [el]
 
   (def {:min-width mw
-        :width width
         :children cs
         :sizing sizing} el)
 
-  (if width
-    width
+  (if-let [w (preset-width el)]
+    w
     (max
       (or (when (number? mw) mw) 0)
       (or (case sizing
             :row (with-dyns [:max-width 0]
-                   ((row-sizing el) :width))
+                   (row-sizing el)
+                   (preset-width el))
             (max ;(map min-width cs)))
           0))))
 
@@ -122,17 +165,17 @@ Returns the biggest min-height in an element tree.
   [el]
 
   (def {:min-height mh
-        :height height
         :children cs
         :sizing sizing} el)
 
-  (if height
-    height
+  (if-let [h (preset-height el)]
+    h
     (max
       (or (when (number? mh) mh) 0)
       (or (case sizing
             :vertical (with-dyns [:max-height 0]
-                        ((vertical-sizing el) :height))
+                        (vertical-sizing el)
+                        (preset-height el))
             (max ;(map min-height cs)))
           0))))
 
@@ -151,6 +194,14 @@ Returns the biggest min-height in an element tree.
                     (dyn :max-width)
                     (dyn :max-height)))
 
+  (def sized (if width?
+               (dyn :sized-width)
+               (dyn :sized-height)))
+
+  (def preset (if width?
+                preset-width
+                preset-height))
+
   (var tot-weight 0)
   (var size-leftover total-size)
 
@@ -163,7 +214,7 @@ Returns the biggest min-height in an element tree.
       (let [s (or (c axis) ((if width?
                               min-width
                               min-height) c))]
-        (put c axis s)
+        (put sized c s)
         (-= size-leftover s))))
 
   (def weight-size (if (zero? tot-weight)
@@ -178,8 +229,8 @@ Returns the biggest min-height in an element tree.
                size (props axis)
                new-size (if (indexed? size)
                           (* (first size) weight-size)
-                          (c axis))]]
-    (put c axis new-size)
+                          (preset c))]]
+    (put sized c new-size)
     (with-dyns [:max-width (if width?
                              new-size
                              (dyn :max-width))
@@ -189,11 +240,14 @@ Returns the biggest min-height in an element tree.
       (apply-sizing c)
       (if width?
         (do
-          (+= el-w (c :width))
-          (set el-h (max el-h (c :height))))
+          (+= el-w (preset-width c))
+          (set el-h (max el-h (preset-height c))))
         (do
-          (set el-w (max el-w (c :width)))
-          (+= el-h (c :height))))))
+          (set el-w (max el-w (preset-width c)))
+          (+= el-h (preset-height c))))))
+
+  (put (dyn :sized-width) el el-w)
+  (put (dyn :sized-height) el el-h)
 
   (-> el
       (put :content-width el-w)
@@ -215,10 +269,15 @@ Returns the biggest min-height in an element tree.
   [el]
   (def words (string/split " " (el :text)))
 
+  (def w (min (max (* 10 (reduce |(max $0 (length $1)) 0 words)) # longest word
+                   (dyn :max-width))
+              (* 10 (length (el :text)))))
+
+  (put (dyn :sized-width) el w)
+  (put (dyn :sized-height) el 14)
+
   (-> el
-      (put :width (min (max (* 10 (reduce |(max $0 (length $1)) 0 words)) # longest word
-                            (dyn :max-width))
-                       (* 10 (length (el :text)))))
+      (put :width w)
       (put :height 14)))
 
 (defn size
@@ -231,7 +290,9 @@ Returns the biggest min-height in an element tree.
 
 (assert (= [310 40]
            (size (with-dyns [:max-width 300
-                             :max-height 400]
+                             :max-height 400
+                             :sized-width @{}
+                             :sized-height @{}]
                    (row-sizing @{:sizing :wrap
                                  :children [@{:sizing text-sizing
                                               :text "aoeaoeaoeoaeoouhhue nsoaentshetnsoahutnse hoatnsuheaonsae"
@@ -248,13 +309,16 @@ Returns the biggest min-height in an element tree.
 
 (assert (= [40 400]
            (size (with-dyns [:max-width 300
-                             :max-height 400]
+                             :max-height 400
+                             :sized-width @{}
+                             :sized-height @{}]
                    (vertical-sizing
                      @{:sizing :wrap
                        :children [@{:props @{:height [1]}
                                     :sizing :wrap
                                     :children []}
-                                  @{:props @{:height 30}
+                                  @{:props @{:height 30
+                                             :width 40}
                                     :sizing :wrap
                                     :height 30
                                     :width 40
@@ -268,7 +332,9 @@ Returns the biggest min-height in an element tree.
 
 (assert (= [140 40]
            (size (with-dyns [:max-width 300
-                             :max-height 400]
+                             :max-height 400
+                             :sized-width @{}
+                             :sized-height @{}]
                    (row-sizing @{:children [@{:width 40
                                               :sizing :wrap
                                               :props @{:width 40}
@@ -278,6 +344,7 @@ Returns the biggest min-height in an element tree.
                                                            :children []}]}
                                             @{:width 100
                                               :height 40
+                                              :sizing :wrap
                                               :props {:width 100
                                                       :height 40}
                                               :children []}]}
@@ -287,7 +354,9 @@ Returns the biggest min-height in an element tree.
 
 (assert (= [300 40]
            (size (with-dyns [:max-width 300
-                             :max-height 400]
+                             :max-height 400
+                             :sized-width @{}
+                             :sized-height @{}]
                    (row-sizing @{:children [@{:props @{:width [1]}
                                               :sizing :expand-w
                                               :children []}
@@ -314,19 +383,23 @@ Returns the biggest min-height in an element tree.
 ################# min-width
 
 (assert (= 300
-           (min-width
-             @{:props {}
-               :children [@{:tag :img
-                            :children []
-                            :min-width 300
-                            :props {:width 300}}
-                          @{:min-width 200
-                            :props @{}
-                            :children []}]})))
+           (with-dyns [:sized-width @{}
+                       :sized-height @{}]
+             (min-width
+               @{:props {}
+                 :children [@{:tag :img
+                              :children []
+                              :min-width 300
+                              :props {:width 300}}
+                            @{:min-width 200
+                              :props @{}
+                              :children []}]}))))
 
 
 (with-dyns [:max-width 400
-            :max-height 500]
+            :max-height 500
+            :sized-width @{}
+            :sized-height @{}]
   (let [row-thing @{:sizing :row
                     :props {}
                     :children [@{:min-width 200
@@ -342,6 +415,7 @@ Returns the biggest min-height in an element tree.
     (assert (= 900
                (min-width
                  @{:min-width 900
+                   :props {}
                    :children [@{:tag :img
                                 :min-width 300
                                 :children []
@@ -351,6 +425,7 @@ Returns the biggest min-height in an element tree.
     (= 500
        (min-width
          @{:min-width 200
+           :props {}
            :children [@{:tag :img
                         :min-width 300
                         :width 500

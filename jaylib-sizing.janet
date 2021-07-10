@@ -24,6 +24,9 @@
 
   (+= h (* line-height (min 0 (dec (length lines)))))
 
+  (put (dyn :sized-width) el w)
+  (put (dyn :sized-height) el h)
+
   (ch/put-many
     el
     :line-ys line-ys
