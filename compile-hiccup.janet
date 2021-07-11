@@ -5,6 +5,21 @@
                 ~(put ,k ,v))
               (partition 2 kvs))))
 
+(defn remove-keys
+  [t ks]
+  (def nt @{})
+  (loop [[k v] :pairs t
+         :when (not (ks k))]
+    (put nt k v))
+  nt)
+
+(defn traverse-tree
+  [f el]
+  (f el)
+
+  (loop [c :in (el :children)]
+    (traverse-tree f c)))
+
 (defn in-rec?
   [[px py] x y w h]
   (and
@@ -243,6 +258,13 @@
 
 (setdyn :pretty-format "%.40M")
 
+(defn clear-table
+  [t]
+  (loop [k :keys t]
+    (put t k nil))
+
+  t)
+
 (varfn compile
   [hiccup &keys {:element element
                  :old-children old-children
@@ -294,7 +316,10 @@ hiccup was:
                               :old-children (element :compilation/children)
                               :tags tags)
             element)
-          (let [e (or element @{})]
+          (let [e (or element
+                      @{})]
+            (clear-table e)
+
             (print "compiling: " f-or-kw)
 
             (with-dyns [:element e]
@@ -333,7 +358,7 @@ hiccup was:
                           #(pp e3)
                           (def e3 (compile e3
                                            :old-children (e :children)
-                                           :element e
+                                           :element element
                                            :tags tags))
 
                           e3

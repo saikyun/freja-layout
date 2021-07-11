@@ -9,12 +9,6 @@
 (use freja/defonce)
 (use jaylib)
 
-#### TODO: fix refreshing sizing
-# possibly need to figure out what might cause things to resize
-# but would be nice for now to just refresh the whole thing somehow
-# possibly adding sizing with an extra table, using the "lower" table
-# as a prototype
-
 (setdyn :pretty-format "%.40M")
 
 (defonce state1234 @{:cat "Truls"

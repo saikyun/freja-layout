@@ -167,8 +167,7 @@
 
 (def el123
   (tracev
-    (with-dyns [:tags tags
-                :text/font "Poppins"
+    (with-dyns [:text/font "Poppins"
                 :text/size 14]
       (ch/compile
         [:padding {:left 700 :top 35}
@@ -191,7 +190,8 @@
            "yo"
            [:background {:color :blue}
             "hej"]]] #]
-]))))
+]
+        :tags tags))))
 
 (defonce lul (do
                (init-audio-device)
@@ -292,8 +292,7 @@
       (put :render draw)))
 
 (def el
-  (with-dyns [:tags tags
-              :text/font "Poppins"
+  (with-dyns [:text/font "Poppins"
               :text/size 30
               :text/line-height 1]
     (ch/compile
@@ -301,10 +300,10 @@
 
        [:background {:color :pink}
         [:block {:height 800}
-         [:text {:color :blue}
-          "dhhjdjfdjdjkdjdfkkjfkkffkdokfssssssiiifk"
-          "gtglfllgogl"]
-         [bounce {}]]]])))
+         [:text {:color :blue
+                 :text "dhhjdjfdjdjkdjdfkkjfkkffkdokfssssssiiifk\ngtglfllgogl"}]
+         [bounce {}]]]]
+      :tags tags)))
 
 (import freja/defonce :prefix "")
 
@@ -372,7 +371,9 @@
 
 #(tracev
 (with-dyns [:max-width (get-screen-width)
-            :max-height (get-screen-height)]
+            :max-height (get-screen-height)
+            :sized-width @{}
+            :sized-height @{}]
   (s/apply-sizing el)) #)
 
 (merge-into
