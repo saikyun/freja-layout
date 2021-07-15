@@ -1,0 +1,9 @@
+
+## TODO: Need to rethink sizing business.
+## The things needed to rethink are:
+## - What size should a row be?
+## - What is the difference between "you shouldn't grow too big" vs "this is absolute max width"?
+## -- E.g. a [:row {} [:block {} ...] [:block {} ...]]
+## -- How big should the blocks become?
+## -- Probably as small as the smallest children. Maybe.
+## -- I should compare to CSS / HTML too...

@@ -4,6 +4,9 @@
 (import ./sizing :as s)
 (import spork/test)
 
+# TODO: remove
+(use jaylib)
+
 (defonce render-tree @{})
 
 (var children-on-event nil)
@@ -12,9 +15,13 @@
   [e ev]
   # traverse children first
   # will return true if the event is taken
+  #(pp (e :tag))
+  #(pp (e :left))
   (if (with-dyns [:offset-x (+ (dyn :offset-x)
+                               (get e :left 0)
                                (get-in e [:offset 3] 0))
                   :offset-y (+ (dyn :offset-y)
+                               (get e :top 0)
                                (get-in e [:offset 0] 0))]
         (children-on-event e ev))
     true
@@ -33,28 +40,16 @@
 
   (loop [c :in cs
          :let [{:width w
-                :height h} c]
+                :height h
+                :left x
+                :top y} c]
          :until taken]
 
-    #(print "tag: " (c :tag))
+    #(with-dyns [:offset-x (+ (dyn :offset-x))
+    #            :offset-y (+ (dyn :offset-y))]
+      (set taken (elem-on-event c ev)))#)
 
-    (when (and (pos? x)
-               (> (+ x w) content-width))
-      (set x 0)
-      (+= y row-h)
-      (set row-h 0))
-
-    (with-dyns [:offset-x (+ (dyn :offset-x) x)
-                :offset-y (+ (dyn :offset-y) y)]
-      (set taken (elem-on-event c ev)))
-
-    # (print "pos: " x " " y)
-
-    (+= x w)
-
-    (set row-h (max row-h h))
-    #
-)
+  #
 
   taken)
 
@@ -80,12 +75,12 @@
                        :text/size text/size
                        :old-root old-root}]
 
-  #  (put props :compilation/changed true)
+  (put props :compilation/changed true)
 
   (with-dyns [:text/font text/font
               :text/size text/size]
     (print "compiling tree...")
-    (def root (test/timeit (ch/compile (hiccup props)
+    (def root (test/timeit (ch/compile [hiccup props]
                                        :tags tags
                                        :element old-root)))
 
@@ -155,10 +150,27 @@
       :on-event (fn [self ev]
                   (match ev
                     [:dt dt]
-                    (:draw self dt)
+                    (do
+
+                      (when (window-resized?)
+                        (put self :max-width (get-screen-width))
+
+                        (put self :root
+                             (compile-tree
+                               (self :hiccup)
+                               (self :props)
+                               :tags tags
+                               :max-width (self :max-width)
+                               :max-height (self :max-height)
+                               :text/font text/font
+                               :text/size text/size
+                               :old-root (self :root))))
+
+                      (:draw self dt))
 
                     '(table? ev)
                     (do (print "compiling tree!")
+                      (put self :props ev)
                       (put self :root
                            (compile-tree
                              (self :hiccup)

@@ -13,12 +13,40 @@
     (put nt k v))
   nt)
 
+(defn keep-keys
+  [t ks]
+  (loop [[k v] :pairs t
+         :when (not (ks k))]
+    (put t k nil))
+
+  t)
+
 (defn traverse-tree
   [f el]
-  (f el)
+  (loop [c :in (get el :children [])]
+    (traverse-tree f c))
 
-  (loop [c :in (el :children)]
-    (traverse-tree f c)))
+  (loop [c :in (get el :compilation/children [])]
+    (traverse-tree f c))
+
+  (when-let [ie (el :inner/element)]
+    (traverse-tree f ie))
+
+  (f el))
+
+(defn map-tree
+  [f el]
+  (def cs (when-let [cs (el :children)]
+            (map |(map-tree f $) cs)))
+
+  (-> (table/clone el)
+      (put :compilation/children nil)
+      (put :inner/element nil)
+      (put :compilation/f nil)
+      (put :compilation/props nil)
+      (put :compilation/nof-children nil)
+      f
+      (put :children cs)))
 
 (defn in-rec?
   [[px py] x y w h]
@@ -153,6 +181,17 @@
       (put-many :offset [top right bottom left]
                 :sizing :wrap)))
 
+(defn align
+  [props & children]
+  (def {:vertical v
+        :horizontal h} props)
+
+  (-> (dyn :element)
+      (add-default-props props)
+      (put-many :horizontal h
+                :vertical v
+                :sizing :wrap)))
+
 (defn background
   [props & children]
   (def {:color color} props)
@@ -190,8 +229,17 @@
 
 (defn same?
   [h1 h2]
-  (if (string? h1)
+  (cond (string? h1)
     (= h1 h2)
+
+    (or (nil? h1)
+        (nil? h2))
+    (do
+      (eprint "STRANGE NIL IN SAME?")
+      (tracev h1)
+      (tracev h2)
+      false)
+
     (do
       ### this part just extracts the right parts of the hiccup or table
       (var tag1 nil)
@@ -256,19 +304,27 @@
 )
 
 
-(setdyn :pretty-format "%.40M")
+(setdyn :pretty-format "%.4M")
 
 (defn clear-table
   [t]
+  #(print "clearing table!")
+  #(pp t)
   (loop [k :keys t]
     (put t k nil))
 
   t)
 
+(def lul @{})
+
 (varfn compile
   [hiccup &keys {:element element
-                 :old-children old-children
                  :tags tags}]
+  #(print "compiling...")
+  #(pp hiccup)
+  #(print "old: ")
+  #(pp element)
+
   (if (table? hiccup)
     # this means it's already compiled, e.g. a precompiled child
     hiccup
@@ -301,95 +357,80 @@ hiccup was:
       #(print "compiling...")
       #(pp hiccup)
 
-      (def el
-        (if (and element
-                 (# tracev
-                 do
+      (if (and element
+               (# tracev
+               do
  (same? (#tracev
         do
  element)
         (#tracev
         do
  hiccup))))
-          (do
-            (compile-children children
-                              :old-children (element :compilation/children)
-                              :tags tags)
-            element)
-          (let [e (or element
-                      @{})]
-            (clear-table e)
+        (do
+          (compile-children children
+                            :old-children (element :compilation/children)
+                            :tags tags)
+          element)
+        (let [elem (or element
+                       @{})]
+          (clear-table elem)
 
-            (print "compiling: " f-or-kw)
+          (print "compiling: " f-or-kw)
 
-            (with-dyns [:element e]
-              (def children
-                (compile-children children
-                                  :old-children (e :compilation/children)
-                                  :tags tags))
+          (with-dyns [:element elem]
+            (def children
+              (compile-children children
+                                :old-children (elem :compilation/children)
+                                :tags tags))
 
-              (pp hiccup)
-              (def e3 (f props ;children))
+            (pp hiccup)
+            (def res (f props ;children))
 
-              #(print "before")
-              #(pp e3)
+            #(print "before")
+            #(pp res)
 
-              (def e3 (if (indexed? e3)
-                        (do
-                          (comment
-                            (let [neee (put-many
-                                         e
-                                         :compilation/props props
-                                         :sizing :wrap)]
+            (def outer (if (indexed? res)
+                         (do
 
-                              (put neee :children
-                                   (compile-children
-                                     [e3]
-                                     :old-children (e :compilation/children)
-                                     :tags tags))
+                           ### TODO: probably need to rethink this
+                           # need to come up with small example
+                           # that breaks
 
-                              (put neee :compilation/children children)
-                              (put neee :nof-children (length children))
+                           (def inner (compile res
+                                               :element (elem :inner/element)
+                                               :tags tags))
 
-                              neee))
-                          #
+                           #(print "inside index, after compi")
+                           #(pp inner)
 
-                          #(print "got more hiccup")
-                          #(pp e3)
-                          (def e3 (compile e3
-                                           :old-children (e :children)
-                                           :element element
-                                           :tags tags))
+                           (put lul :a res)
 
-                          e3
+                           (merge-into elem inner)
 
-                          #
-)
+                           (put elem :inner/element inner)
 
-                        (do
-                          (when tag-data
-                            (put e3 :tag f-or-kw))
-                          (put e3 :f f)
+                           elem)
 
-                          (-> e3
-                              (put :children children)
-                              (put :compilation/children children)
-                              (put :compilation/nof-children (length children))
-                              (put :compilation/props props)))))
+                         (do
+                           (when tag-data
+                             (put elem :tag f-or-kw))
 
-              (-> e3
-                  (put :compilation/children children)
-                  (put :compilation/nof-children (length children))
-                  (put :compilation/props props))
+                           (-> elem
+                               (put :f f)
+                               (put :children children)))))
 
-              #(print "after")
-              #(pp e3)
+            (-> outer
+                (put :compilation/children children)
+                (put :compilation/nof-children (length children))
+                (put :compilation/props props)
+                (put :compilation/f f))
 
-              (when tag-data (merge-into e3 tag-data))
+            #(print "after")
+            #(pp outer)
 
-              (put e3 :compilation/f f)))))
+            (when tag-data (merge-into outer tag-data))
 
-      el)))
+            outer))))))
 
 (setdyn :pretty-format "%.40M")
 
@@ -477,15 +518,15 @@ hiccup was:
 
 
 
-(defn a
+(defn q
   [props & children]
-  #(print "a")
+  #(print "q")
   #(pp props)
   (-> (dyn :element)
       (add-default-props props)))
 
 
-(defn c
+(defn a
   [props & children]
   #(print "a")
   #(pp props)
@@ -496,13 +537,17 @@ hiccup was:
   [props & children]
   #(print "a")
   #(pp props)
-  [a {}
-   [a {}]
-   [a {}]])
+  [a props])
+
+(defn c
+  [props & children]
+  #(print "a")
+  #(pp props)
+  [b props])
 
 (defn thing
   [props & children]
-  [a {:cat (props :size)}
+  [q {:cat (props :size)}
    ;children])
 
 (defn child
@@ -519,6 +564,7 @@ hiccup was:
 (print)
 (print "step1")
 
+
 (def hc123 [thing props
             [child {:size-child (props :size)}
              [a {}] [a props]]])
@@ -528,10 +574,16 @@ hiccup was:
   ~[thing props
     [child {:outer-props :outer}]])
 
+(defmacro hc
+  []
+  ~[thing props
+    [c {:outer-props (props :size2)}]])
+
 (def el #(test/timeit
   (compile (hc)
            :tags @{})) #)
-(pp el)
+#(pp el)
+
 
 (def props @{:size 0 :size2 0})
 
@@ -542,4 +594,28 @@ hiccup was:
   (compile (hc)
            :element el
            :tags tags)) #)
-(pp el)
+
+(defn print-and-destroy-tags-and-children
+  [el]
+  (traverse-tree
+    |(keep-keys $ {:compilation/children 1
+                   :children 1
+                   :inner/element 1
+                   :tag 1
+                   :f 1})
+    el)
+
+  (pp el))
+
+(defn print-and-destroy-no-inner
+  [el]
+  (traverse-tree
+    |(keep-keys $ {:children 1
+                   :tag 1
+                   :f 1})
+    el)
+
+  (pp el))
+
+(print "ye")
+(print-and-destroy-no-inner el)

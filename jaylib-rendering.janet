@@ -18,6 +18,17 @@
                ly (line-ys i)]]
     (draw-text-ex f l [0 ly] size spacing color)))
 
+(defn oneliner-render
+  [{:color color
+    :text text
+    :font font
+    :size size
+    :spacing spacing}]
+
+  (def f (a/font font size))
+
+  (draw-text-ex f text [0 0] size spacing color))
+
 (defn background-render
   [{:width width
     :height height
@@ -119,6 +130,9 @@
 
           (rl-translatef w 0 0)
 
+          (put c :left x)
+          (put c :top y)
+
           (+= x w)
 
           (set row-h (max row-h h))
@@ -131,3 +145,51 @@
         (rl-pop-matrix)
         #        (error err)
         (debug/stacktrace fib err)))))
+
+
+(defn align-render-children
+  [{:children children
+    :lines lines
+    :content-width content-width}]
+
+  (with-matrix
+    (var line-start 0)
+    (var y 0)
+    (loop [line-end :in lines
+           :let [line-w (do
+                          (var w 0)
+                          (loop [i :range [line-start line-end]
+                                 :let [c (children i)
+                                       cw (c :width)]]
+                            (+= w cw))
+                          w)]]
+      #
+      (var line-h 0)
+      (var x 0)
+      (with-matrix
+        (set x (- content-width line-w))
+        (rl-translatef (- content-width line-w) 0 0)
+
+        (loop [i :range [line-start line-end]
+               :let [c (children i)
+                     {:width w
+                      :height h} c]]
+          (render c)
+
+          (put c :left x)
+          (put c :top y)
+
+          (+= x w)
+
+          (rl-translatef w 0 0)
+          (set line-h (max line-h h)))
+
+        (+= y line-h)
+        (rl-translatef 0 line-h 0)
+
+        (set line-start line-end))
+      #
+))
+
+  #
+)

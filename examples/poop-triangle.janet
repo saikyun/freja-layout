@@ -197,10 +197,12 @@
                (init-audio-device)
                :audio-inited))
 
-(def bajs (-> (load-wave "bajs.wav")
+(def bajs (-> (load-wave "./examples/bajs.wav")
               (load-sound-from-wave)))
-(def bajs2 (-> (load-wave "bajs2.wav")
+(def bajs2 (-> (load-wave "./examples/bajs2.wav")
                (load-sound-from-wave)))
+(def flug (-> (load-wave "./examples/ljud.wav")
+              (load-sound-from-wave)))
 
 (def tri @{:pos @[0 0]})
 
@@ -237,11 +239,6 @@
 
 (defn draw
   [self]
-  (draw-rectangle-rec
-    [100 100
-     200 200]
-    :purple)
-
   #(pp (get-mouse-position))
 
   (def [x y] (and #(mouse-button-down? 0)
@@ -251,9 +248,22 @@
 
   (rl-push-matrix)
   (rl-load-identity)
+
+  (draw-rectangle-rec
+    [#
+     #
+     #
+     600 200
+     #
+     200 200]
+    :purple)
+
   (def pos (tri :pos))
 
   (put tri :color :pink)
+  (when (mouse-button-down? :left)
+    (play-sound flug))
+
   (when
     (and (>= (+ x 25) (+ 500 100))
          (< (- x 25) (+ 500 300)))

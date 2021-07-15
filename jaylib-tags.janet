@@ -1,4 +1,5 @@
 (import ./compile-hiccup :as ch)
+(import ./sizing :as s)
 (import ./jaylib-sizing :as js)
 (import ./jaylib-rendering :as jr)
 
@@ -7,6 +8,12 @@
             :text @{:f ch/text
                     :sizing js/text-sizing
                     :render jr/text-render}
+            :oneliner @{:f ch/text
+                        :sizing js/oneliner-sizing
+                        :render jr/oneliner-render}
+            :align @{:f ch/align
+                     :sizing s/align-sizing
+                     :render-children jr/align-render-children}
             :padding @{:f ch/padding}
             :row @{:f ch/row}
             :vertical @{:f ch/vertical}

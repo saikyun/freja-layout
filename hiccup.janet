@@ -21,6 +21,7 @@
 (defn elem-on-event
   [e ev]
   (with-dyns [:offset-x (+ (dyn :offset-x)
+                           (tracev (get e :left 0))
                            (get-in e [:offset 0] 0))
               :offset-y (+ (dyn :offset-y)
                            (get-in e [:offset 1] 0))]
