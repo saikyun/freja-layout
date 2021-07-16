@@ -1,6 +1,6 @@
 (import ./compile-hiccup :as ch)
 (import ./sizing :as s)
-(import ./jaylib-sizing :as js)
+(import ./jaylib-sizing :as js :fresh true)
 (import ./jaylib-rendering :as jr)
 
 (def tags @{:block @{:f ch/block}

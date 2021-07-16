@@ -40,7 +40,7 @@ adds a new row.
         :offset offset
         :min-width min-width} el)
 
-  (def width (tracev (preset-width el)))
+  (def width (preset-width el))
   (def height (preset-height el))
 
   (def [top right bottom left] (or offset [0 0 0 0]))
@@ -65,9 +65,9 @@ adds a new row.
                  _ (apply-sizing c)
                  w (preset-width c)
                  h (preset-height c)]]
-      (print (c :f))
+      #(print (c :f))
       (when (and (pos? x)
-                 (>= (+ x w) max-width))
+                 (>= (tracev (+ x w)) (tracev max-width)))
         (array/push lines i)
         (set x 0)
         (+= y row-h)
@@ -77,7 +77,7 @@ adds a new row.
       #(put-in c [:position 0] x)
       #(put-in c [:position 1] y)
 
-      (+= x (tracev w))
+      (+= x w)
       (set row-h (max row-h h))
 
       (set el-w (max el-w x))
@@ -86,13 +86,13 @@ adds a new row.
 
     (array/push lines (length cs))
 
-    (def w (tracev (or width (+ left right el-w))))
+    (def w (or width (+ left right el-w)))
     (def h (or height (+ top bottom row-h y)))
     (put (dyn :sized-width) el w)
     (put (dyn :sized-height) el h)
 
     (-> el
-        (put :lines lines)
+        (put :layout/lines lines)
         (put :width w)
         (put :content-width max-width)
         (put :height h))))
@@ -102,12 +102,10 @@ adds a new row.
   (wrap-sizing el)
 
   (when (el :horizontal)
-    (def w (max (tracev ((dyn :sized-width) el))
-                (tracev (dyn :max-width))))
+    (def w (max ((dyn :sized-width) el)
+                (dyn :max-width)))
     (put el :width w)
-    (put (dyn :sized-width)
-         el
-         (tracev w)))
+    (put (dyn :sized-width) el w))
 
   #  (when (el :vertical)
   #    (put el :height (put (dyn :sized-height) el (dyn :max-height))))
@@ -129,7 +127,6 @@ adds a new row.
   (default mw 0)
   (default mh 0)
 
-  #     TODO: figure out a way to reenable this
   (cond (and width height)
     el
 
@@ -137,7 +134,11 @@ adds a new row.
       (case sizing
         :wrap (wrap-sizing el)
         :expand-w (do (wrap-sizing el)
-                    (put (dyn :sized-width) el (dyn :max-width)))
+                    (put (dyn :sized-width) el
+                         (max (preset-width el)
+                              (dyn :max-width)))) # if max-width is lower than actual width
+        #                                         # we retain the actual width
+        #                                         # this can happen when children are big
         :expand-h (do (wrap-sizing el)
                     (put (dyn :sized-height) el (dyn :max-height)))
         :expand (do (put (dyn :sized-width) el (dyn :max-width))
@@ -156,6 +157,8 @@ adds a new row.
 
       (put (dyn :sized-width) el width)
       (put (dyn :sized-height) el height)
+      (put el :width width)
+      (put el :height height)
 
       el)))
 
@@ -177,7 +180,7 @@ Returns the biggest min-width in an element tree.
             :row (with-dyns [:max-width 0]
                    (row-sizing el)
                    (preset-width el))
-            (tracev (max ;(map min-width cs))))
+            (max ;(map min-width cs)))
           0))))
 
 (defn min-height
@@ -234,14 +237,14 @@ Returns the biggest min-height in an element tree.
     (if (and (not size) weight)
       (+= tot-weight weight)
 
-      (let [s (tracev (or (sized c)
-                          ((if width?
-                             min-width
-                             min-height)
-                            c)))]
-        (put sized c s)
-        (put c axis s)
+      (let [_ (with-dyns [(if width?
+                            :max-width
+                            :max-height) 0]
+                (apply-sizing c))
+            s (preset c)]
         (-= size-leftover s))))
+
+  (set size-leftover (max 0 size-leftover))
 
   (def weight-size (if (zero? tot-weight)
                      0
@@ -268,7 +271,7 @@ Returns the biggest min-height in an element tree.
                               (dyn :max-height))]
       (apply-sizing c)
       (when (and (not size) weight)
-        (put sized c new-size)
+        (put sized c new-size) # when using weight, we replace the width
         (put c axis new-size))
       (if width?
         (do

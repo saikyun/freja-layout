@@ -48,6 +48,13 @@
       f
       (put :children cs)))
 
+
+(defn print-tree
+  [t]
+  (pp (map-tree
+        identity
+        t)))
+
 (defn in-rec?
   [[px py] x y w h]
   (and
@@ -131,9 +138,6 @@
 
 (defn text
   [props & children]
-
-  (print "running text")
-  (pp props)
 
   (def {:size size
         :font font
@@ -375,7 +379,8 @@ hiccup was:
                        @{})]
           (clear-table elem)
 
-          (print "compiling: " f-or-kw)
+          (when (dyn :freja/log)
+            (print "compiling: " f-or-kw))
 
           (with-dyns [:element elem]
             (def children
@@ -383,7 +388,8 @@ hiccup was:
                                 :old-children (elem :compilation/children)
                                 :tags tags))
 
-            (pp hiccup)
+            (when (dyn :freja/log)
+              (pp hiccup))
             (def res (f props ;children))
 
             #(print "before")
@@ -555,67 +561,63 @@ hiccup was:
   (print "child")
   [c {:size :child-thing}
    [a {:size :lllllllllllol}]])
+(comment
+  (import spork/test)
 
-(import spork/test)
+  (def props @{:size 1337
+               :size2 123})
 
-(def props @{:size 1337
-             :size2 123})
+  (print)
+  (print "step1")
 
-(print)
-(print "step1")
+  (def hc123 [thing props
+              [child {:size-child (props :size)}
+               [a {}] [a props]]])
 
+  (defmacro hc
+    []
+    ~[thing props
+      [child {:outer-props :outer}]])
 
-(def hc123 [thing props
-            [child {:size-child (props :size)}
-             [a {}] [a props]]])
+  (defmacro hc
+    []
+    ~[thing props
+      [c {:outer-props (props :size2)}]])
 
-(defmacro hc
-  []
-  ~[thing props
-    [child {:outer-props :outer}]])
-
-(defmacro hc
-  []
-  ~[thing props
-    [c {:outer-props (props :size2)}]])
-
-(def el #(test/timeit
-  (compile (hc)
-           :tags @{})) #)
-#(pp el)
+  (def el #(test/timeit
+    (compile (hc)
+             :tags @{})) #)
+  #(pp el)
 
 
-(def props @{:size 0 :size2 0})
+  (def props @{:size 0 :size2 0})
 
-(print)
-(print "step2")
-(def el
-  #(test/timeit
-  (compile (hc)
-           :element el
-           :tags tags)) #)
+  (print)
+  (print "step2")
+  (def el
+    #(test/timeit
+    (compile (hc)
+             :element el
+             :tags tags)) #)
 
-(defn print-and-destroy-tags-and-children
-  [el]
-  (traverse-tree
-    |(keep-keys $ {:compilation/children 1
-                   :children 1
-                   :inner/element 1
-                   :tag 1
-                   :f 1})
-    el)
+  (defn print-and-destroy-tags-and-children
+    [el]
+    (traverse-tree
+      |(keep-keys $ {:compilation/children 1
+                     :children 1
+                     :inner/element 1
+                     :tag 1
+                     :f 1})
+      el)
 
-  (pp el))
+    (pp el))
 
-(defn print-and-destroy-no-inner
-  [el]
-  (traverse-tree
-    |(keep-keys $ {:children 1
-                   :tag 1
-                   :f 1})
-    el)
+  (defn print-and-destroy-no-inner
+    [el]
+    (traverse-tree
+      |(keep-keys $ {:children 1
+                     :tag 1
+                     :f 1})
+      el)
 
-  (pp el))
-
-(print "ye")
-(print-and-destroy-no-inner el)
+    (pp el)))

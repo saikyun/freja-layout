@@ -87,7 +87,7 @@
     #(tracev o)
     (render-children el)))
 
-(varfn flow-render-children
+(varfn flow-render-children-old
   [{:children cs
     :tag tag
     :content-width content-width}]
@@ -149,7 +149,7 @@
 
 (defn align-render-children
   [{:children children
-    :lines lines
+    :layout/lines lines
     :content-width content-width}]
 
   (with-matrix
@@ -190,6 +190,63 @@
         (set line-start line-end))
       #
 ))
+
+  #
+)
+
+
+(varfn flow-render-children
+  [{:children children
+    :layout/lines lines
+    :f f
+    :content-width content-width}]
+
+  (print ">> rendering children for")
+  (print f)
+
+  (default lines [])
+
+  (with-matrix
+    (var line-start 0)
+    (var y 0)
+    (loop [line-end :in (tracev lines)]
+      #
+      (var line-h 0)
+      (var x 0)
+      (with-matrix
+
+        (loop [i :range [line-start line-end]
+               :let [c (children i)
+                     {:width w
+                      :height h} c]]
+          (print)
+          (print "new stuff wat")
+          (print (c :f))
+          (tracev x)
+
+          (render c)
+
+          (put c :left x)
+          (put c :top y)
+
+          (+= x w)
+
+          (tracev x)
+
+          (rl-translatef (tracev w) 0 0)
+          (set line-h (max line-h h)))
+
+        (print "end of line")
+
+        (+= y line-h)
+
+        (set line-start line-end))
+
+      (rl-translatef 0 line-h 0)
+      #
+))
+
+  (print "<< done rendering children")
 
   #
 )

@@ -17,17 +17,18 @@
   # will return true if the event is taken
   #(pp (e :tag))
   #(pp (e :left))
-  (if (with-dyns [:offset-x (+ (dyn :offset-x)
-                               (get e :left 0)
-                               (get-in e [:offset 3] 0))
-                  :offset-y (+ (dyn :offset-y)
-                               (get e :top 0)
-                               (get-in e [:offset 0] 0))]
-        (children-on-event e ev))
-    true
+  (with-dyns [:offset-x (+ (dyn :offset-x)
+                           (get e :left 0)
+                           (get-in e [:offset 3] 0))
+              :offset-y (+ (dyn :offset-y)
+                           (get e :top 0)
+                           (get-in e [:offset 0] 0))]
+    (if
+      (children-on-event e ev)
+      true
 
-    (when (e :on-event)
-      (:on-event e ev))))
+      (when (e :on-event)
+        (:on-event e ev)))))
 
 (varfn children-on-event
   [{:children cs
@@ -47,7 +48,7 @@
 
     #(with-dyns [:offset-x (+ (dyn :offset-x))
     #            :offset-y (+ (dyn :offset-y))]
-      (set taken (elem-on-event c ev)))#)
+    (set taken (elem-on-event c ev))) #)
 
   #
 
@@ -107,6 +108,12 @@
 # the layer already existing
 (defonce named-layers @{})
 
+(defn remove-layer
+  [name props]
+  (when-let [l (named-layers name)]
+    (put l :on-event (fn [& _])))
+  (put named-layers name nil))
+
 
 (defn new-layer
   [name
@@ -145,8 +152,11 @@
   (merge-into
     render-tree
     @{:draw (fn [self dt]
+              (print)
+              (print "############################## new frame!!! ####################")
               ((self :render)
-                (self :root)))
+                (self :root))
+              (print))
       :on-event (fn [self ev]
                   (match ev
                     [:dt dt]
