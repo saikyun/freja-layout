@@ -11,47 +11,78 @@
 (defn sleep
   [_ev] # we ignore the event
   (e/put! my-props :weight (* 10 (math/random)))
-
   (e/put! my-props :zeds
           (string/repeat "z"
                          (math/floor (* 30 (math/random))))))
 
+(defn bg
+  [props & children]
+  [:background {:color 0x00ff0033
+                :weight (props :weight)}
+   [:padding {:right 0}
+    [:background (struct :color 0x00ff00ff
+                         ;(flatten (pairs props)))
+     [:padding {:all 0}
+      [:block {}
+       ;children]]]]])
+
+(defn list123
+  [props & _]
+
+  [:block {}
+   ;(seq [_ :range [0 1]]
+      [:row {}
+       [:background {:weight nil :color :blue}
+        [:padding {:right 10}
+         [:clickable {:on-click |(do (pp $)
+                                   (e/put! (props :p) :a 10))}
+          [:block {} "Open"]]]]
+       [:background {:weight 1 :color :green}
+        [:block {:weight 1}
+         [:align {:horizontal :right}
+          "Ctrl+O"]]]])])
+
+
 (defn hiccup
   [props & children]
-  [:block {:width 300}
-   #[:background {:color 0x44ccccff}
-   #   [:block {}
-   [:padding {:all 5}
-    "hello ueao ueoa ueoa"
-    #      [:align {:horizontal :right}
-    #       [:background {:color 0x00ff00ff}
-    #        [:padding {:left 15}
-    #         [:clickable {:on-click sleep}
-    #          [:background {:color 0xffffffcc}
-    #     "how sleepy?\n(click here)"]]]]]
-    (string (props :zeds))
-    [:clickable {:on-click (fn [& args]
-                             (pp args)
-                             (sleep ;args))}
-     [:background {:color 0xffffff55}
-      "how sleepy123?\n(click here)"]]
-    #    (string (props :zeds))
-] #]#]
-   #   [:padding {:top 15}
-   #    [:background {:color 0xcccc44ff}
-   #     [:row {}
-   #      [:background {:color 0x00ff00ff
-   #                    :weight (props :weight)}
-   #       [:padding {:all 3}
-   #        [:oneliner {:text "hello"}]]]
-   #
-   #      [:padding {:all 3
-   #                 :weight 3}
-   #       [:align {:horizontal :right}
-   #        [:text {:text "hej2 ni"}]]]]]]
-])
+  [:padding {:left 600 :top 30}
+   #"hej"
+   #[:block {}]
+   [:block {}
+    "hej"]
+   (comment
+     [:background {:color :red}
+      [:block {:max-width 0}
+       "a"
+
+       [list123 {:p props}]
+
+       [:row {}
+        [:background {:weight nil :color :pink}
+         [:padding {:right 10}
+          [:block {} "Open"]]]
+        [:background {:weight 1 :color :orange}
+         [:block {}
+          [:align {:horizontal :right}
+           "Ctrl+OOOxdO"]]]]]])])
 
 (comment
+
+  [:row {}
+   [:background {:weight nil
+                 :color :blue}
+    [:block {} "Open"]]
+   [:background {:weight 1 :color :green}
+    [:block {:weight 1}
+     [:align {:horizontal :right}
+      "Ctrl+O"]]]]
+  [:row {}
+   [:background {:weight 1 :color :pink}
+    [:block {:weight 1} "Open"]]
+   [:background {:weight 1 :color :orange}
+    [:block {:weight 1}
+     [:align {:horizontal :right}
+      "Ctrl+OO"]]]]
 
   (import ./compile-hiccup :as ch :fresh true)
 

@@ -1,3 +1,5 @@
+(use profiling/profile)
+
 (var apply-sizing nil)
 
 (defn preset-width
@@ -13,7 +15,7 @@ it doesn't need to be recalculated.
 ``
   [el]
   (or ((dyn :sized-width) el)
-      (when-let [w (get-in el [:props :width])]
+      (when-let [w (get el :preset-width)]
         (when (number? w)
           (put (dyn :sized-width) el w)
           w))))
@@ -22,10 +24,29 @@ it doesn't need to be recalculated.
   [el]
   (or
     ((dyn :sized-height) el)
-    (when-let [h (get-in el [:props :height])]
+    (when-let [h (get el :preset-height)]
       (when (number? h)
         (put (dyn :sized-height) el h)
         h))))
+
+(defn el-min-width
+  ``
+Gets the width of the widest child, using :max-width 0.
+If :min-width is set, and it is bigger than widest child,
+use that instead.
+``
+  [el]
+  (def {:min-width min-width
+        :children cs} el)
+
+  (var mw (or min-width 0))
+
+  (loop [c :in cs
+         :let [c (with-dyns [:max-width 0]
+                   (apply-sizing c))]]
+    (set mw (max mw (c :width))))
+
+  mw)
 
 (defn wrap-sizing
   ``
@@ -38,14 +59,21 @@ adds a new row.
   [el]
   (def {:children cs
         :offset offset
-        :min-width min-width} el)
+        :props props} el)
 
-  (def width (preset-width el))
-  (def height (preset-height el))
+  (def width #(preset-width el)
+    (props :width))
+
+  (def height
+    (props :height)
+    #(preset-height el)
+)
 
   (def [top right bottom left] (or offset [0 0 0 0]))
 
-  (def max-width (- (or width (dyn :max-width))
+  (def min-width (el-min-width el))
+
+  (def max-width (- (max min-width (or width (dyn :max-width)))
                     left
                     right))
 
@@ -67,7 +95,7 @@ adds a new row.
                  h (preset-height c)]]
       #(print (c :f))
       (when (and (pos? x)
-                 (>= (tracev (+ x w)) (tracev max-width)))
+                 (>= (+ x w) max-width))
         (array/push lines i)
         (set x 0)
         (+= y row-h)
@@ -115,73 +143,83 @@ adds a new row.
 (var row-sizing nil)
 (var vertical-sizing nil)
 
+(import spork/test)
+
 (varfn apply-sizing
   [el]
-  (def {:sizing sizing
-        :min-width mw
-        :min-height mh} el)
-
-  (def width (preset-width el))
-  (def height (preset-height el))
-
-  (default mw 0)
-  (default mh 0)
-
-  (cond (and width height)
-    el
-
+  (print "start sizing: " (el :f) " - " (dyn :max-width))
+  (test/timeit
     (do
-      (case sizing
-        :wrap (wrap-sizing el)
-        :expand-w (do (wrap-sizing el)
-                    (put (dyn :sized-width) el
-                         (max (preset-width el)
-                              (dyn :max-width)))) # if max-width is lower than actual width
-        #                                         # we retain the actual width
-        #                                         # this can happen when children are big
-        :expand-h (do (wrap-sizing el)
-                    (put (dyn :sized-height) el (dyn :max-height)))
-        :expand (do (put (dyn :sized-width) el (dyn :max-width))
-                  (put (dyn :sized-height) el (dyn :max-height)))
-        :row (row-sizing el)
-        :vertical (vertical-sizing el)
-        (if (nil? sizing)
-          (do
-            (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
-            (wrap-sizing el))
-          (sizing el)))
+      (def {:sizing sizing
+            :min-width mw
+            :min-height mh} el)
 
-      # set width to highest of current width and min-width
-      (def width (max mw (preset-width el)))
-      (def height (max mh (preset-height el)))
+      (def width (preset-width el))
+      (def height (preset-height el))
 
-      (put (dyn :sized-width) el width)
-      (put (dyn :sized-height) el height)
-      (put el :width width)
-      (put el :height height)
+      (default mw 0)
+      (default mh 0)
 
-      el)))
+      (cond #(and width height)
+        #el
 
-(defn min-width
-  ``
+        (do
+          (case sizing
+            :wrap (wrap-sizing el)
+            :expand-w (with-dyns [:max-width (min (get-in el [:props :max-width] 999999)
+                                                  (dyn :max-width))]
+                        (wrap-sizing el)
+                        (put (dyn :sized-width) el
+                             (max (preset-width el)
+                                  (dyn :max-width)))) # if max-width is lower than actual width
+            #                                         # we retain the actual width
+            #                                         # this can happen when children are big
+            :expand-h (do (wrap-sizing el)
+                        (put (dyn :sized-height) el (dyn :max-height)))
+            :expand (do (put (dyn :sized-width) el (dyn :max-width))
+                      (put (dyn :sized-height) el (dyn :max-height)))
+            :row (row-sizing el)
+            :vertical (vertical-sizing el)
+            (if (nil? sizing)
+              (do
+                (print (string "no sizing, using :wrap for " (string/format "%.40M" el)))
+                (wrap-sizing el))
+              (sizing el)))
+
+          # set width to highest of current width and min-width
+          (def width (or (get-in el [:preset-width])
+                         (max mw (preset-width el))))
+          (def height (max mh (preset-height el)))
+
+          (put (dyn :sized-width) el width)
+          (put (dyn :sized-height) el height)
+          (put el :width width)
+          (put el :height height)
+
+          (print "done sizing" (el :f) " - " (dyn :max-width))
+          el)))))
+
+(comment
+  (defn min-width
+    ``
 Returns the biggest min-width in an element tree.
 ``
-  [el]
+    [el]
 
-  (def {:min-width mw
-        :children cs
-        :sizing sizing} el)
+    (def {:min-width mw
+          :children cs
+          :sizing sizing} el)
 
-  (if-let [w (preset-width el)]
-    w
-    (max
-      (or (when (number? mw) mw) 0)
-      (or (case sizing
-            :row (with-dyns [:max-width 0]
-                   (row-sizing el)
-                   (preset-width el))
-            (max ;(map min-width cs)))
-          0))))
+    (if-let [w (preset-width el)]
+      w
+      (max
+        (or (when (number? mw) mw) 0)
+        (or (case sizing
+              :row (with-dyns [:max-width 0]
+                     (row-sizing el)
+                     (preset-width el))
+              (max ;(map min-width cs)))
+            0)))))
 
 (defn min-height
   ``
@@ -215,10 +253,6 @@ Returns the biggest min-height in an element tree.
 
   (def width? (= :width axis))
 
-  (def total-size (if width?
-                    (dyn :max-width)
-                    (dyn :max-height)))
-
   (def sized (if width?
                (dyn :sized-width)
                (dyn :sized-height)))
@@ -227,28 +261,45 @@ Returns the biggest min-height in an element tree.
                 preset-width
                 preset-height))
 
+  (var total-calculated-size 0)
+
   (var tot-weight 0)
-  (var size-leftover total-size)
+  (var size-eaten 0)
+
+  (var minimum-weight-size 0)
 
   (loop [c :in children
          :let [props (c :props)
                size (props axis)
-               weight (props :weight)]]
+               weight (props :weight)
+               c (with-dyns [(if width?
+                               :max-width
+                               :max-height) 0]
+                   (apply-sizing c))]]
+    (+= total-calculated-size (c axis))
+
     (if (and (not size) weight)
-      (+= tot-weight weight)
+      (do
+        (set minimum-weight-size
+             (max minimum-weight-size
+                  (/ (c axis) weight)))
+        (+= tot-weight weight))
+      (+= size-eaten (c axis))))
 
-      (let [_ (with-dyns [(if width?
-                            :max-width
-                            :max-height) 0]
-                (apply-sizing c))
-            s (preset c)]
-        (-= size-leftover s))))
+  (set total-calculated-size
+       (max
+         total-calculated-size
+         (if width?
+           (dyn :max-width)
+           (dyn :max-height))))
 
-  (set size-leftover (max 0 size-leftover))
+  (def size-leftover (max 0 (- total-calculated-size size-eaten)))
 
-  (def weight-size (if (zero? tot-weight)
-                     0
-                     (/ size-leftover tot-weight)))
+  (def weight-size
+    (max minimum-weight-size
+         (if (zero? tot-weight)
+           0
+           (/ size-leftover tot-weight))))
 
   (var el-w 0)
   (var el-h 0)
@@ -271,8 +322,8 @@ Returns the biggest min-height in an element tree.
                               (dyn :max-height))]
       (apply-sizing c)
       (when (and (not size) weight)
-        (put sized c new-size) # when using weight, we replace the width
-        (put c axis new-size))
+        (put sized c (max (preset c) new-size))
+        (put c axis (max (preset c) new-size)))
       (if width?
         (do
           (+= el-w (preset-width c))
@@ -419,8 +470,10 @@ Returns the biggest min-height in an element tree.
 
 (assert (= 300
            (with-dyns [:sized-width @{}
-                       :sized-height @{}]
-             (min-width
+                       :sized-height @{}
+                       :max-width 900
+                       :max-height 400]
+             (el-min-width
                @{:props {}
                  :children [@{:tag :img
                               :children []
@@ -448,7 +501,7 @@ Returns the biggest min-height in an element tree.
     (assert (= [400 0] (size (row-sizing row-thing))))
 
     (assert (= 900
-               (min-width
+               (el-min-width
                  @{:min-width 900
                    :props {}
                    :children [@{:tag :img
@@ -458,12 +511,13 @@ Returns the biggest min-height in an element tree.
                               row-thing]})))
 
     (= 500
-       (min-width
+       (el-min-width
          @{:min-width 200
            :props {}
            :children [@{:tag :img
                         :min-width 300
                         :width 500
+                        :children []
                         :props {:width 300}}
                       row-thing]}))
 

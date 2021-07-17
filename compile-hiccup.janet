@@ -69,6 +69,8 @@
         :height height
         :min-width min-width
         :min-height min-height
+        :max-width max-width
+        :max-height max-height
         :sizing sizing} props)
 
   (default sizing :wrap)
@@ -76,8 +78,10 @@
   (put-many e
             :sizing sizing
             :props props
-            :width width
-            :height height
+            :preset-width width
+            :preset-height height
+            :max-width max-width
+            :min-width min-width
             :min-width min-width
             :min-height min-height))
 
@@ -297,7 +301,8 @@
   #(put el :children
   (seq [i :range [0 (length children)]
         :let [c (children i)
-              old-c (get old-children i)]]
+              old-c (get old-children i)]
+        :when c]
     (compile c :element old-c
              :tags tags))
   #)

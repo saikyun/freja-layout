@@ -201,15 +201,15 @@
     :f f
     :content-width content-width}]
 
-  (print ">> rendering children for")
-  (print f)
+  #(print ">> rendering children for")
+  #(print f)
 
-  (default lines [])
+  (default lines [0 (length children)])
 
   (with-matrix
     (var line-start 0)
     (var y 0)
-    (loop [line-end :in (tracev lines)]
+    (loop [line-end :in lines]
       #
       (var line-h 0)
       (var x 0)
@@ -219,10 +219,9 @@
                :let [c (children i)
                      {:width w
                       :height h} c]]
-          (print)
-          (print "new stuff wat")
-          (print (c :f))
-          (tracev x)
+          #(print)
+          #(print "new stuff wat")
+          #(print (c :f))
 
           (render c)
 
@@ -231,12 +230,10 @@
 
           (+= x w)
 
-          (tracev x)
-
-          (rl-translatef (tracev w) 0 0)
+          (rl-translatef w 0 0)
           (set line-h (max line-h h)))
 
-        (print "end of line")
+        # (print "end of line")
 
         (+= y line-h)
 
@@ -246,7 +243,7 @@
       #
 ))
 
-  (print "<< done rendering children")
+  #  (print "<< done rendering children")
 
   #
 )

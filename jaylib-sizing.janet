@@ -4,7 +4,8 @@
 
 (defmacro eol
   []
-  ~(do (set w (max w x))
+  ~(do (-= x space-w) # remove the size of the space
+     (set w (max w x))
      (set x 0)
      (+= h (* line-height lh))
      (array/push line-ys h)
@@ -50,7 +51,6 @@ To add no word wrapping, one could add a "no-break" option.
         (let [[ww wh] (jaylib/measure-text-ex (a/font font size) word size spacing)]
           (when (and (pos? x) (> (+ ww x) max-width))
             # if we end up here, a line was too long
-            (-= x space-w) # remove the size of the space
             (eol))
 
           (unless (empty? current-line)

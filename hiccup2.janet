@@ -85,12 +85,13 @@
                                        :tags tags
                                        :element old-root)))
 
+    (print "sizing tree...")
     (def root-with-sizes
-      (with-dyns [:max-width max-width
-                  :max-height max-height
-                  :sized-width @{}
-                  :sized-height @{}]
-        (s/apply-sizing root)))
+      (test/timeit (with-dyns [:max-width max-width
+                               :max-height max-height
+                               :sized-width @{}
+                               :sized-height @{}]
+                     (s/apply-sizing root))))
 
     (put props :compilation/changed false)
 
@@ -152,11 +153,8 @@
   (merge-into
     render-tree
     @{:draw (fn [self dt]
-              (print)
-              (print "############################## new frame!!! ####################")
               ((self :render)
-                (self :root))
-              (print))
+                (self :root)))
       :on-event (fn [self ev]
                   (match ev
                     [:dt dt]

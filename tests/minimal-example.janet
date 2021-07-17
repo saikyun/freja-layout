@@ -1,5 +1,5 @@
-(import ./jaylib-tags :as jt :fresh true)
-(import ./hiccup2 :as h)
+(import ../jaylib-tags :as jt :fresh true)
+(import ../hiccup2 :as h)
 (import freja/events :as e)
 (use freja/defonce)
 (use jaylib)
@@ -12,10 +12,54 @@
   [_ev] # we ignore the event
   (e/put! my-props :weight (* 10 (math/random)))
 
-  #  (e/put! my-props :zeds
-  #         (string/repeat "z"
-  #                        (math/floor (* 30 (math/random)))))
+    (e/put! my-props :zeds
+           (string/repeat "z"
+                          (math/floor (* 30 (math/random)))))
 )
+
+
+(defn hiccup2
+  [props & children]
+  [:padding {:left 600 :top 30}
+   [:block {:width 300}
+    [:background {:color 0x44ccccff}
+     [:block {}
+      [:padding {:all 5}
+       "hello ueao ueoa ueoa"
+       [:align {:horizontal :right}
+        [:background {:color 0x00ff00ff}
+         [:padding {:left 15}
+          [:clickable {:on-click sleep}
+           [:background {:color 0xffffffcc}
+            "how sleepy?\n(click here)"]]]]]
+       (string (props :zeds))
+       [:clickable {:on-click (fn [& args]
+                                (pp args)
+                                (sleep ;args))}
+        [:background {:color 0xffffff55}
+         "how sleepy123?\n(click here)"]]
+       (string (props :zeds))]]]
+
+    "wat"
+
+    [:row {}
+     "hej"
+     "hej2"]
+
+    [:padding {:top 15}
+     [:background {:color 0x44cc44ff}
+      [:row {}
+       [:background {:color 0x00ff00ff
+                     :weight (props :weight)}
+        [:padding {:all 3}
+         [:text {:text "hello"}]]]
+
+       [:padding {:all 3
+                  :weight 3}
+        [:align {:horizontal :right}
+         [:text {:text "hej2 ni"}]]]]]]
+    #
+]])
 
 #(comment
 (defn hiccup
@@ -147,7 +191,7 @@
 )
 
 (def c (h/new-layer :test-layer2
-                    hiccup
+                    hiccup2
                     my-props
                     :render jt/render
                     :tags jt/tags
