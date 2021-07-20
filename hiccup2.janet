@@ -89,7 +89,7 @@
     (def root-with-sizes
       (test/timeit (with-dyns [:max-width max-width
                                :max-height max-height
-                               :sized-width @{}
+                               :sized-width @{:min @{}}
                                :sized-height @{}]
                      (s/apply-sizing root))))
 

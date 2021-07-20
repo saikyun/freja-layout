@@ -4,6 +4,14 @@
 (use freja/defonce)
 (use jaylib)
 
+(use profiling/profile)
+
+(comment
+  (print-results)
+
+  #
+)
+
 (setdyn :pretty-format "%.40M")
 
 (defonce my-props @{})
@@ -30,7 +38,7 @@
   [props & _]
 
   [:block {}
-   ;(seq [_ :range [0 1]]
+   ;(seq [_ :range [0 10]]
       [:row {}
        [:background {:weight nil :color :blue}
         [:padding {:right 10}
@@ -39,8 +47,9 @@
           [:block {} "Open"]]]]
        [:background {:weight 1 :color :green}
         [:block {:weight 1}
-         [:align {:horizontal :right}
-          "Ctrl+O"]]]])])
+         [:background {:color :orange}
+          [:align {:horizontal :right}
+           "Ctrl+O"]]]]])])
 
 
 (defn hiccup
@@ -48,23 +57,20 @@
   [:padding {:left 600 :top 30}
    #"hej"
    #[:block {}]
-   [:block {}
-    "hej"]
-   (comment
-     [:background {:color :red}
-      [:block {:max-width 0}
-       "a"
+   [:background {:color :red}
+    [:block {:max-width 0}
+     "a"
 
-       [list123 {:p props}]
+     [list123 {:p props}]
 
-       [:row {}
-        [:background {:weight nil :color :pink}
-         [:padding {:right 10}
-          [:block {} "Open"]]]
-        [:background {:weight 1 :color :orange}
-         [:block {}
-          [:align {:horizontal :right}
-           "Ctrl+OOOxdO"]]]]]])])
+     [:row {}
+      [:background {:weight nil :color :pink}
+       [:padding {:right 10}
+        [:block {} "Open"]]]
+      [:background {:weight 1 :color :orange}
+       [:block {}
+        [:align {:horizontal :right}
+         "Ctrl+OOOxdO"]]]]]]])
 
 (comment
 
