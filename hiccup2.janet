@@ -1,7 +1,9 @@
 (import freja/defonce :prefix "")
 (import freja/frp)
 (import ./compile-hiccup :as ch)
-(import ./sizing :as s)
+#(import ./sizing :as s)
+(import ./sizing/definite :as def-siz)
+(import ./sizing/relative :as rel-siz)
 (import spork/test)
 
 # TODO: remove
@@ -61,13 +63,6 @@
     (when (elem-on-event tree ev)
       (frp/push-callback! ev (fn [])))))
 
-#(tracev
-(comment
-  (with-dyns [:max-width (get-screen-width)
-              :max-height (get-screen-height)]
-    (s/apply-sizing el)) #)
-)
-
 (defn compile-tree
   [hiccup props &keys {:max-width max-width
                        :max-height max-height
@@ -87,11 +82,10 @@
 
     (print "sizing tree...")
     (def root-with-sizes
-      (test/timeit (with-dyns [:max-width max-width
-                               :max-height max-height
-                               :sized-width @{:min @{}}
-                               :sized-height @{}]
-                     (s/apply-sizing root))))
+      (test/timeit
+        (-> root
+            (def-siz/set-definite-sizes max-width max-height)
+            (rel-siz/set-relative-size max-width max-height))))
 
     (put props :compilation/changed false)
 

@@ -89,8 +89,6 @@ The font must already be registered using `register-font`.
   (when-let [existing-font (get-in font-info [style size])]
     (unload-font existing-font))
 
-  (tracev style)
-
   (def lf (f/default-load-font-from-memory
             (get-in font-info [style :ext])
             (get-in font-info [style :data])

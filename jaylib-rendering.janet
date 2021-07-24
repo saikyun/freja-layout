@@ -147,10 +147,12 @@
         (debug/stacktrace fib err)))))
 
 
+# TODO: figure out align-sizing etc
+
 (defn align-render-children
   [{:children children
     :layout/lines lines
-    :content-width content-width}]
+    :width width}]
 
   (with-matrix
     (var line-start 0)
@@ -167,8 +169,8 @@
       (var line-h 0)
       (var x 0)
       (with-matrix
-        (set x (- content-width line-w))
-        (rl-translatef (- content-width line-w) 0 0)
+        (set x (- width line-w))
+        (rl-translatef (- width line-w) 0 0)
 
         (loop [i :range [line-start line-end]
                :let [c (children i)
@@ -194,12 +196,10 @@
   #
 )
 
-
 (varfn flow-render-children
   [{:children children
     :layout/lines lines
-    :f f
-    :content-width content-width}]
+    :f f}]
 
   #(print ">> rendering children for")
   #(print f)
@@ -222,12 +222,19 @@
           #(print)
           #(print "new stuff wat")
           #(print (c :f))
+          #(print "???" (c :width) "-" w)
 
           (render c)
+
+          #(print)
+
+          #(print (c :f))
 
           (put c :left x)
           (put c :top y)
 
+          #(tracev x) (tracev w)
+          #(print (string/format "%.40M" c))
           (+= x w)
 
           (rl-translatef w 0 0)

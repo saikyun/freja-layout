@@ -80,16 +80,21 @@
             :props props
             :preset-width width
             :preset-height height
-            :max-width max-width
-            :min-width min-width
-            :min-width min-width
-            :min-height min-height))
+            :preset-max-width max-width
+            :preset-min-width min-width
+            :preset-max-height max-height
+            :preset-min-height min-height))
 
 (defn block
   [props & children]
   (-> (dyn :element)
       (add-default-props props)
       (put :sizing :expand-w)))
+
+(defn flow
+  [props & children]
+  (-> (dyn :element)
+      (add-default-props props)))
 
 (defn row
   [props & children]
@@ -151,7 +156,7 @@
         :text text} props)
 
   (default size (dyn :text/size 14))
-  (default font (dyn :text/font))
+  (default font (dyn :text/font "Poppins"))
   (default line-height (dyn :text/line-height 1))
   (default spacing (dyn :text/spacing 2))
   (default color 0x000000ff)
@@ -210,6 +215,7 @@
                 :sizing :wrap)))
 
 (def tags @{:block @{:f block}
+            :flow @{:f flow}
             :text @{:f text}
             :padding @{:f padding}
             :background @{:f background}})

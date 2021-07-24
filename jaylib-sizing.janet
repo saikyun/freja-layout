@@ -20,7 +20,7 @@ but words won't be broken up.
 
 To add no word wrapping, one could add a "no-break" option.
 ``
-  [el]
+  [el context-max-width context-max-height]
   (def {:lines lines
         :font font
         :size size
@@ -28,7 +28,7 @@ To add no word wrapping, one could add a "no-break" option.
         :spacing spacing
         :line-height line-height} el)
 
-  (default max-width (dyn :max-width))
+  (default max-width context-max-width)
 
   (def line-ys (array/new (length lines)))
   (array/push line-ys 0)
@@ -64,38 +64,9 @@ To add no word wrapping, one could add a "no-break" option.
     # here is just end of line due to a newline character
     (eol))
 
-  (comment
-    (array/push new-lines current-line)
-    (+= h (* line-height lh))
-    (set w (max w x)))
-
-  #  (+= h (* line-height (min 0 (dec (length lines)))))
-
-  (put (dyn :sized-width) el w)
-  (put (dyn :sized-height) el h)
-
   (ch/put-many
     el
     :line-ys line-ys
     :lines new-lines
-    :width w
-    :height h))
-
-
-(defn oneliner-sizing
-  [el]
-  (def {:text text
-        :font font
-        :size size
-        :spacing spacing
-        :line-height line-height} el)
-
-  (def [w h] (jaylib/measure-text-ex (a/font font size) text size spacing))
-
-  (put (dyn :sized-width) el w)
-  (put (dyn :sized-height) el h)
-
-  (ch/put-many
-    el
     :width w
     :height h))
