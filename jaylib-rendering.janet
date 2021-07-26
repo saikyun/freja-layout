@@ -2,14 +2,15 @@
 (import ./assets :as a)
 
 (defn text-render
-  [{:color color
-    :text text
-    :font font
-    :size size
-    :spacing spacing
-    :lines lines
-    :line-ys line-ys
-    :line-height line-height}]
+  [props]
+  (def {:color color
+        :text text
+        :font font
+        :size size
+        :spacing spacing
+        :lines lines
+        :line-ys line-ys
+        :line-height line-height} props)
 
   (def f (a/font font size))
 

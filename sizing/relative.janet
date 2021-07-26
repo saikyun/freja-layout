@@ -70,7 +70,8 @@
       (array/push lines i)
       (set biggest-w (max biggest-w x))
       (set x 0)
-      (+= y row-h))
+      (+= y row-h)
+      (set row-h 0))
 
     (+= x w)
     (set row-h (max row-h h)))
@@ -100,10 +101,14 @@
   (flow-sizing el max-w max-h)
 
   (unless has-width?
-    (update el :width + left right))
+    (def w (el :width))
+    (put el :width (max (el :min-width)
+                        (+ w left right))))
 
   (unless has-height?
-    (update el :height + top bottom))
+    (def h (el :height))
+    (put el :height (max (el :min-height)
+                         (+ h top bottom))))
 
   el)
 
@@ -251,9 +256,10 @@
 (put-in jt/tags [:flow :relative-sizing] flow-sizing)
 (put-in jt/tags [:block :relative-sizing] block-sizing)
 (put-in jt/tags [:padding :definite-sizing] d/padding-sizing)
-(put-in jt/tags [:padding :relative-sizing] flow-sizing)
+(put-in jt/tags [:padding :relative-sizing] padding-sizing)
 (put-in jt/tags [:row :definite-sizing] d/row-sizing)
 (put-in jt/tags [:row :relative-sizing] row-sizing)
+(put-in jt/tags [:background :relative-sizing] flow-sizing)
 
 (let [el (compile [:flow {}
                    "hej"
@@ -343,10 +349,6 @@
   (print-tree with-sizes)
   (assert2 (table? with-sizes)))
 
-
-## TODO: implement the "shrink to smallest child" behaviour
-
-
 ### SHRINK
 
 (defn shrink-sizing
@@ -379,7 +381,7 @@
   (assert2 (table? with-sizes))
 
   # shrinks to biggest child width
-  (assert2 (= 100 (with-sizes :width))))
+  (assert2 (= 100 (get-in with-sizes [:children 0 :width]))))
 
 
 (let [el (compile [:padding {:left 500}
@@ -395,7 +397,41 @@
   (assert2 (table? with-sizes))
 
   # shrinks to biggest child width ("hello" in this case)
-  (assert2 (= 30 (with-sizes :width))))
+  (assert2 (= 30 (get-in with-sizes [:children 0 :width]))))
+
+
+(let [el (compile
+           [:shrink {}
+            [:padding {:top 6 :bottom 6}
+             "a"]
+            [:block {}]]
+           :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 800 600)
+      with-sizes (set-relative-size el 800 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # height equal to the padding-part, since the block has 0 height
+  (assert2 (= (get-in with-sizes [:children 0 :height])
+              (with-sizes :height))))
+
+
+#### TEXT
+
+(let [el (compile
+           [:background {:color 0x00ff00ff}
+            "a"]
+           :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 800 600)
+      with-sizes (set-relative-size el 800 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # height equal to the padding-part, since the block has 0 height
+  (assert2 (= (get-in with-sizes [:children 0 :height])
+              (with-sizes :height))))
 
 
 #

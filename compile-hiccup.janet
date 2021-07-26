@@ -51,9 +51,10 @@
 
 (defn print-tree
   [t]
-  (pp (map-tree
-        identity
-        t)))
+  (print (string/format "%.40M"
+                        (map-tree
+                          identity
+                          t))))
 
 (defn in-rec?
   [[px py] x y w h]
@@ -111,6 +112,8 @@
 
 (defn clickable
   [props & _]
+  (assert (props :on-click) "clickable should have :on-click")
+
   (-> (dyn :element)
       (add-default-props props)
       (put :on-event
@@ -209,6 +212,9 @@
   [props & children]
   (def {:color color} props)
 
+  # transparent black
+  (default color 0x00000000)
+
   (-> (dyn :element)
       (add-default-props props)
       (put-many :color color
@@ -241,6 +247,15 @@
        (not (p2 :compilation/changed))
        (= p1 p2)))
 
+(defn nof-no-nil-children
+  [hiccup]
+  (var nof 0)
+  (loop [i :range [2 (length hiccup)]
+         :let [c (get hiccup i)]
+         :when (not (nil? c))]
+    (++ nof))
+  nof)
+
 (defn same?
   [h1 h2]
   (cond (string? h1)
@@ -263,15 +278,17 @@
 
       (if (table? h1)
         (do
+          #(print (string/format "%.40M" h1))
           (set tag1 (h1 :tag))
           (set f1 (h1 :compilation/f))
           (set props1 (h1 :compilation/props))
           (set nof-children1 (h1 :compilation/nof-children)))
         (do
+          #(tracev h1)
           (set tag1 (h1 0))
           (set f1 (h1 0))
           (set props1 (h1 1))
-          (set nof-children1 (- (length h1) 2))))
+          (set nof-children1 (nof-no-nil-children h1))))
 
       (var tag2 nil)
       (var f2 nil)
@@ -280,15 +297,18 @@
 
       (if (table? h2)
         (do
+          #(print (string/format "%.40M" h2))
           (set tag2 (h2 :tag))
           (set f2 (h2 :compilation/f))
           (set props2 (h2 :compilation/props))
           (set nof-children2 (h2 :compilation/nof-children)))
         (do
+
+          #(tracev h2)
           (set tag2 (h2 0))
           (set f2 (h2 0))
           (set props2 (h2 1))
-          (set nof-children2 (- (length h2) 2))))
+          (set nof-children2 (nof-no-nil-children h2))))
       ### end of extraction
 
       (and (same-except-children? tag1 f1 props1
@@ -308,7 +328,7 @@
   (seq [i :range [0 (length children)]
         :let [c (children i)
               old-c (get old-children i)]
-        :when c]
+        :when (not (nil? c))]
     (compile c :element old-c
              :tags tags))
   #)
@@ -438,7 +458,9 @@ hiccup was:
 
             (-> outer
                 (put :compilation/children children)
-                (put :compilation/nof-children (length children))
+                (put :compilation/nof-children (length (filter
+                                                         (comptime (comp nil? not))
+                                                         children)))
                 (put :compilation/props props)
                 (put :compilation/f f))
 
