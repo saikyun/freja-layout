@@ -1,4 +1,4 @@
-(use ../tests/assert2)
+(use ../assert2)
 (use ../compile-hiccup)
 (import ./test-tags :as jt :fresh true)
 
@@ -124,7 +124,7 @@
   #(print-tree (get-in with-sizes [:children 0]))
   (let [c (get-in with-sizes [:children 0])
         {:width w :height h} c]
-    (assert2 (and (= w 18) (= h 14)) (pp c))))
+    (assert2 (and (= w 16) (= h 14)) (pp c))))
 
 ### PADDING
 
@@ -223,7 +223,7 @@
   (assert2 (not (get-in el [:children 1 :width]))
            (print-tree (get-in el [:children 1])))
 
-  (assert2 (= 118 (el :min-width))))
+  (assert2 (= 116 (el :min-width))))
 
 
 (let [el (compile [:row {}

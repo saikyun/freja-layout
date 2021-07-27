@@ -161,7 +161,7 @@
   (default size (dyn :text/size 14))
   (default font (dyn :text/font "Poppins"))
   (default line-height (dyn :text/line-height 1))
-  (default spacing (dyn :text/spacing 2))
+  (default spacing (dyn :text/spacing 1))
   (default color 0x000000ff)
 
   (def t text)

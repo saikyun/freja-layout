@@ -1,4 +1,4 @@
-(use ../tests/assert2)
+(use ../assert2)
 (use ../compile-hiccup)
 (import ./test-tags :as jt)
 (import ./definite :as d :fresh true)
@@ -290,7 +290,7 @@
   (assert2 (table? with-sizes))
 
   # width is the width of children
-  (assert2 (= (with-sizes :width) 118))
+  (assert2 (= (with-sizes :width) 116))
 
   # three lines since block becomes its own line
   (assert2 (= 1 (length (with-sizes :layout/lines)))))
@@ -397,7 +397,7 @@
   (assert2 (table? with-sizes))
 
   # shrinks to biggest child width ("hello" in this case)
-  (assert2 (= 30 (get-in with-sizes [:children 0 :width]))))
+  (assert2 (= 26 (get-in with-sizes [:children 0 :width]))))
 
 
 (let [el (compile

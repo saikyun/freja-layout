@@ -2,11 +2,12 @@
 
 (import freja-layout/jaylib-tags :as jt)
 (import freja-layout/hiccup2 :as h)
+(import freja-layout/sizing/relative :as rs)
+
 (import freja/events :as e)
 (import freja/frp)
 (import freja/input :as i)
 (import freja/new_gap_buffer :as gb)
-(import freja-layout/sizing/relative :as rs)
 (use freja/defonce)
 (use jaylib)
 
