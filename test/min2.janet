@@ -1,5 +1,5 @@
-(import ../jaylib-tags :as jt)
-(import ../hiccup2 :as h)
+(import ../freja-layout/jaylib-tags :as jt)
+(import ../freja-layout/hiccup2 :as h)
 (import freja/events :as e)
 (use freja/defonce)
 (use jaylib)

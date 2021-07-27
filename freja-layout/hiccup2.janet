@@ -75,17 +75,22 @@
 
   (with-dyns [:text/font text/font
               :text/size text/size]
-    (print "compiling tree...")
-    (def root (test/timeit (ch/compile [hiccup props]
-                                       :tags tags
-                                       :element old-root)))
+    #(print "compiling tree...")
+    (def root #(test/timeit
+      (ch/compile [hiccup props]
+                  :tags tags
+                  :element old-root)
+      #)
+)
 
-    (print "sizing tree...")
+    #(print "sizing tree...")
     (def root-with-sizes
-      (test/timeit
-        (-> root
-            (def-siz/set-definite-sizes max-width max-height)
-            (rel-siz/set-relative-size max-width max-height))))
+      #(test/timeit
+      (-> root
+          (def-siz/set-definite-sizes max-width max-height)
+          (rel-siz/set-relative-size max-width max-height))
+      #)
+)
 
     (put props :compilation/changed false)
 

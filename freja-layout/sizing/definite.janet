@@ -212,7 +212,7 @@
                    [:block {:width 100} "hej pa dig"]
                    [:block {:weight 1}
                     [:padding {}
-                     [block {} "hej"]]]
+                     [:block {} "hej"]]]
                    [:block {:weight 2}]]
                   :tags jt/tags)
       with-sizes (set-definite-sizes el 800 600)]
@@ -230,7 +230,7 @@
                    [:block {:width 100} "hej pa dig"]
                    [:block {:weight nil}
                     [:padding {:right 300}
-                     [block {} "hej"]]]
+                     [:block {} "hej"]]]
                    [:block {:weight 2}]]
                   :tags jt/tags)
       with-sizes (set-definite-sizes el 800 600)]

@@ -1,31 +1,30 @@
-(import ./compile-hiccup :as ch)
+(import ./default-tags :as dt)
 (import ./sizing/definite :as ds)
 (import ./sizing/relative :as rel)
 (import ./jaylib-sizing :as js :fresh true)
 (import ./jaylib-rendering :as jr)
 
-(def tags @{:block @{:f ch/block
+(def tags @{:block @{:f dt/flow
                      :relative-sizing rel/block-sizing}
-            :shrink @{:f ch/flow
+            :shrink @{:f dt/flow
                       :relative-sizing rel/shrink-sizing}
-            :flow @{:f ch/flow
+            :flow @{:f dt/flow
                     :relative-sizing rel/flow-sizing}
-            :clickable @{:f ch/clickable
+            :clickable @{:f dt/clickable
                          :relative-sizing rel/flow-sizing}
-            :text @{:f ch/text
+            :text @{:f dt/text
                     :definite-sizing js/text-sizing
                     :render jr/text-render}
-            :align @{:f ch/align
+            :align @{:f dt/align
                      :relative-sizing rel/block-sizing
                      :render-children jr/align-render-children}
-            :padding @{:f ch/padding
+            :padding @{:f dt/padding
                        :definite-sizing ds/padding-sizing
                        :relative-sizing rel/padding-sizing}
-            :row @{:f ch/row
+            :row @{:f dt/row
                    :definite-sizing ds/row-sizing
                    :relative-sizing rel/row-sizing}
-            :vertical @{:f ch/vertical}
-            :background @{:f ch/background
+            :background @{:f dt/background
                           :render jr/background-render
                           :relative-sizing rel/flow-sizing}})
 

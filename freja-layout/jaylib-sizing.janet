@@ -1,4 +1,5 @@
 (import ./compile-hiccup :as ch)
+(use ./put-many)
 (import jaylib)
 (import ./assets :as a)
 
@@ -64,7 +65,7 @@ To add no word wrapping, one could add a "no-break" option.
     # here is just end of line due to a newline character
     (eol))
 
-  (ch/put-many
+  (put-many
     el
     :line-ys line-ys
     :lines new-lines
