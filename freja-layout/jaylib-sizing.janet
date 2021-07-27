@@ -1,7 +1,6 @@
 (import ./compile-hiccup :as ch)
 (use ./put-many)
 (import jaylib)
-(import ./assets :as a)
 
 (defmacro eol
   []
@@ -44,12 +43,13 @@ To add no word wrapping, one could add a "no-break" option.
   (def new-lines @[])
   (var current-line @"")
 
-  (def [space-w _] (jaylib/measure-text-ex (a/font font size) " " size spacing))
+  (def [space-w _] (jaylib/measure-text-ex
+  ((dyn :text/get-font) font size) " " size spacing))
 
   (each l lines
     (let [words (string/split " " l)]
       (each word words
-        (let [[ww wh] (jaylib/measure-text-ex (a/font font size) word size spacing)]
+        (let [[ww wh] (jaylib/measure-text-ex ((dyn :text/get-font) font size) word size spacing)]
           (when (and (pos? x) (> (+ ww x) max-width))
             # if we end up here, a line was too long
             (eol))

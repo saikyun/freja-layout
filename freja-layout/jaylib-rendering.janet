@@ -1,5 +1,4 @@
 (use jaylib)
-(import ./assets :as a)
 
 (defn text-render
   [props]
@@ -12,23 +11,12 @@
         :line-ys line-ys
         :line-height line-height} props)
 
-  (def f (a/font font size))
+  (def f ((dyn :text/get-font) font size))
 
   (loop [i :range [0 (length lines)]
          :let [l (lines i)
                ly (line-ys i)]]
     (draw-text-ex f l [0 ly] size spacing color)))
-
-(defn oneliner-render
-  [{:color color
-    :text text
-    :font font
-    :size size
-    :spacing spacing}]
-
-  (def f (a/font font size))
-
-  (draw-text-ex f text [0 0] size spacing color))
 
 (defn background-render
   [{:width width
