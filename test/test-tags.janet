@@ -1,7 +1,7 @@
-(import ../compile-hiccup :as ch)
-(import ../default-tags :as dt)
-(import ../jaylib-sizing :as js :fresh true)
-(import ../jaylib-rendering :as jr)
+(import ../freja-layout/compile-hiccup :as ch)
+(import ../freja-layout/default-tags :as dt)
+(import ../freja-layout/jaylib-sizing :as js :fresh true)
+(import ../freja-layout/jaylib-rendering :as jr)
 
 (def tags @{:block @{:f dt/flow}
             :shrink @{:f dt/flow}

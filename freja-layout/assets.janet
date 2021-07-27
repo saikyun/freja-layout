@@ -156,19 +156,19 @@ Leaving `:style` empty will use the `:default-style` for the font.
 )
 
 
-(register-font "Poppins"
-               :style :regular
-               :ext ".otf"
-               :data f/poppins)
+(defn register-default-fonts
+  []
+  (register-font "Poppins"
+                 :style :regular
+                 :ext ".otf"
+                 :data f/poppins)
 
-(register-font "MplusCode"
-               :style :regular
-               :ext ".otf"
-               :data f/mplus)
+  (register-font "MplusCode"
+                 :style :regular
+                 :ext ".otf"
+                 :data f/mplus)
 
-(register-font "EBGaramond"
-               :style :regular
-               # TODO: use new freja
-               #:ext ".otf"
-               #:data f/ebgaramond
-               :path "../freja/fonts/EBGaramond12-Regular.otf")
+  (register-font "EBGaramond"
+                 :style :regular
+                 :ext ".otf"
+                 :data f/ebgaramond))

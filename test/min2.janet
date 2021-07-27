@@ -4,6 +4,9 @@
 (use freja/defonce)
 (use jaylib)
 
+(import ../freja-layout/assets :as a)
+(a/register-default-fonts)
+
 (use profiling/profile)
 
 (setdyn :pretty-format "%.40M")
