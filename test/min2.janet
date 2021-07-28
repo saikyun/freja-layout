@@ -1,11 +1,8 @@
 (import ../freja-layout/jaylib-tags :as jt)
-(import ../freja-layout/hiccup2 :as h)
+(import freja/hiccup :as h)
 (import freja/events :as e)
 (use freja/defonce)
 (use jaylib)
-
-(import ../freja-layout/assets :as a)
-(a/register-default-fonts)
 
 (use profiling/profile)
 
