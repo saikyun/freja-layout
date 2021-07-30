@@ -2,7 +2,7 @@
 
 (defn add-default-props
   ``
-Adds all default props. If you're not using these,
+Adds all default props to `element`. If you're not using these,
 you're probably doing something very special.
 So I recommend that you use it. See `flow` to see how to
 create a basic component using `add-default-props`.
@@ -15,7 +15,7 @@ The default props are:
 :max-width -- maximum width of the element (can be overriden by big children)
 :max-height -- maximum height of the element (can be overriden by big children)
 ``
-  [e props]
+  [element props]
   (def {:width width
         :height height
         :min-width min-width
@@ -23,8 +23,8 @@ The default props are:
         :max-width max-width
         :max-height max-height} props)
 
-  # (put-many e :a x :b y) is like (-> e (put :a x) (put :b y))
-  (put-many e
+  # (put-many @{} :a x :b y) is like (-> @{} (put :a x) (put :b y))
+  (put-many element
             :props props
             :preset-width width
             :preset-height height
@@ -126,8 +126,7 @@ Checks if point `[px py]` is within rectangle `x y w h`.
 (defn clickable
   ``
 Component for creating clickable elements.
-They support being pressed down upon, then moving away the mouse then
-releasing, in order to not have the click happen.
+When a clickable is held down, you can move the mouse away in order to cancel the click.
 
 `props` support the default properties (see `add-default-props`) and:
 - `:on-click`
@@ -284,7 +283,7 @@ Adds pixel padding around its children.
 |.....|
 -------
 # . means 10px of space
-# | / - is just showing the bounds of the `padding` element
+# | and - is just showing the bounds of the `padding` element
 # it isn't actually rendered (by default)
 ```
 ````
@@ -309,7 +308,7 @@ Adds pixel padding around its children.
 (defn align
   ````
 Aligns its children to a certain part of itself.
-By default takes grows to take full width and height of its parent.
+By default grows to the full width and full height of its parent.
 
 `props` support the default properties (see `add-default-props`) and:
 - :horizontal -- :left / :right
@@ -341,14 +340,25 @@ By default takes grows to take full width and height of its parent.
                 :vertical v)))
 
 (defn background
-  ```
+  ````
 A component for adding background color.
 
 
 `props` support the default properties (see `add-default-props`) and:
 - :color -- the background color of the element, e.g. `0x00ff00ff`, `:green` or `[0 1 0]`
--- See jaylib documentation for more information on how to represent colors, default 0x00000000 (fully transparent black, the last two numbers are the alpha)
+-- See [jaylib documentation](https://github.com/janet-lang/jaylib#colors)
+ for more information on how to represent colors
+-- Default 0x00000000 (fully transparent black, the last two numbers are the alpha)
+
+## Example
 ```
+[:background {:color 0x00ff00ff}
+  "hej"]
+#=>
+hej
+# imagine the above having green background
+```
+````
   [props & children]
   (def {:color color} props)
 

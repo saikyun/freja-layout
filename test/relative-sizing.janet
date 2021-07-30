@@ -1,21 +1,14 @@
 (use ../freja-layout/assert2)
 (use ../freja-layout/compile-hiccup)
-(import ./test-tags :as jt)
+(import ./test-tags :as jt :fresh true)
 (import ../freja-layout/sizing/definite :as d :fresh true)
-(use ../freja-layout/sizing/relative)
+(import ../freja-layout/sizing/relative :prefix "" :fresh true)
 
-(import ../freja-layout/assets :as a)
+(import freja/assets :as a)
 (a/register-default-fonts)
 
 (setdyn :pretty-format "%.40M")
-
-(put-in jt/tags [:flow :relative-sizing] flow-sizing)
-(put-in jt/tags [:block :relative-sizing] block-sizing)
-(put-in jt/tags [:padding :definite-sizing] d/padding-sizing)
-(put-in jt/tags [:padding :relative-sizing] padding-sizing)
-(put-in jt/tags [:row :definite-sizing] d/row-sizing)
-(put-in jt/tags [:row :relative-sizing] row-sizing)
-(put-in jt/tags [:background :relative-sizing] flow-sizing)
+(setdyn :text/get-font a/font)
 
 (let [el (compile [:flow {}
                    "hej"
@@ -105,10 +98,6 @@
   (print-tree with-sizes)
   (assert2 (table? with-sizes)))
 
-
-
-(put-in jt/tags [:shrink :relative-sizing] shrink-sizing)
-
 (let [el (compile [:padding {:left 500}
                    [:shrink {}
                     [:block {}
@@ -174,6 +163,76 @@
   (assert2 (= (get-in with-sizes [:children 0 :height])
               (with-sizes :height))))
 
+
+### shrink + row
+
+
+(let [el (compile [:background {:color :red}
+                   [:shrink {}
+                    [:row {}
+                     [:flow {:weight 1}
+                      [:align {:horizontal :left}
+                       [:padding {:right 200}
+                        "Open"]]]
+
+                     [:flow {:weight 1}
+                      "wat"]]]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 200 600)
+      with-sizes (set-relative-size el 200 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # since the first child is bigger than the max-width
+  # it will grow outside the bounds
+  (assert2 (= 247 (el :width))))
+
+
+(let [el (compile [:shrink {}
+                   [:row {}
+                    [:flow {:weight 1}
+                     [:align {:horizontal :left}
+                      [:padding {:right 100}
+                       "Open"]]]
+
+                    [:flow {:weight 1}
+                     "wat"]]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 200 600)
+      with-sizes (set-relative-size el 200 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # weight 1 on both children should mean a width of 100
+  # but due to the padding being 100, plus the size of "Open"
+  # the width grows bigger than that
+  (assert2 (= 128 (get-in el [:children 0 :children 0 :width])))
+  (assert2 (= 19 (get-in el [:children 0 :children 1 :width]))))
+
+
+(let [el (compile [:row {}
+                   [:flow {:weight 1}
+                    [:align {:horizontal :left}
+                     [:padding {:right 100}
+                      "Open"]]]
+
+                   [:flow {:weight 1}
+                    "wat"]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 200 600)
+      with-sizes (set-relative-size el 200 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # weight 1 on both children should mean a width of 100
+  # but due to the padding being 100, plus the size of "Open"
+  # the width grows bigger than that
+  (assert2 (= 128 (get-in el [:children 0 :width])))
+  # the second child gets the rest (lonely weight 1 of 72px = 72px)
+  (assert2 (= 72 (get-in el [:children 1 :width]))))
 
 #
 #

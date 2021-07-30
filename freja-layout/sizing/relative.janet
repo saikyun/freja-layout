@@ -111,53 +111,6 @@
 
   el)
 
-(comment
-
-  (defn row-sizing
-    [row context-max-width context-max-height]
-
-    (default-content-widths row context-max-width context-max-height)
-
-    (def {:children children} row)
-
-    (var total-weight 0)
-    (def total-width (row :content-max-width))
-    (var width-used 0)
-
-    (loop [c :in children
-           :let [{:weight weight} (c :props)]]
-      (if weight
-        (+= total-weight weight)
-        (do
-          (set-definite-sizes
-            c
-            (row :content-max-width)
-            (row :content-max-height))
-          (+= width-used (c :min-width)))))
-
-    (def width-per-weight (/ (- total-width width-used)
-                             total-weight))
-
-    (var min-h 0)
-
-    (loop [c :in children
-           :let [{:weight weight} (c :props)]]
-      (when weight
-        (put c :preset-width (* weight width-per-weight))
-        (set-definite-sizes c
-                            (c :width)
-                            (row :content-max-height)))
-      (set min-h (max min-h (get c :min-height))))
-
-    (put row :min-height min-h)
-
-    (if (zero? total-weight)
-      (put row :width min-width)
-      (put row :width total-width))
-
-    row))
-
-
 (defn row-sizing
   [el context-max-width context-max-height]
 
@@ -177,11 +130,24 @@
   (def width-per-weight (/ (- total-width width-used)
                            total-weight))
 
+  (loop [c :in children
+         :let [{:min-width mw} c
+               {:weight weight} (c :props)]]
+    (when (and weight
+               (> mw width-per-weight))
+      (+= width-used (c :min-width))
+      (-= total-weight weight)
+      (put c :width mw)))
+
+  (def width-per-weight (/ (- total-width width-used)
+                           total-weight))
+
   (var min-h 0)
 
   (loop [c :in children
-         :let [{:weight weight} (c :props)]]
-    (when weight
+         :let [{:width cw} c
+               {:weight weight} (c :props)]]
+    (when (and weight (not cw))
       (put c :width (* weight width-per-weight)))
     (set min-h (max min-h (get c :min-height))))
 
