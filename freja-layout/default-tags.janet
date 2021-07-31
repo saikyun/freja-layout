@@ -314,6 +314,8 @@ By default grows to the full width and full height of its parent.
 - :horizontal -- :left / :right
 -- :left is the "default", i.e. nothing happens, probably
 -- :right aligns all children to the right side of `align`
+
+### :vertical is not implemented yet
 - :vertical -- :top / :bottom
 -- :top is the "default", i.e. nothing happens, probably
 -- :bottom aligns all children to the bottom side of `align`

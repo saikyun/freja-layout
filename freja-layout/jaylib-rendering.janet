@@ -136,55 +136,6 @@
         (debug/stacktrace fib err)))))
 
 
-# TODO: figure out align-sizing etc
-
-(defn align-render-children
-  [{:children children
-    :layout/lines lines
-    :width width}]
-
-  (with-matrix
-    (var line-start 0)
-    (var y 0)
-    (loop [line-end :in lines
-           :let [line-w (do
-                          (var w 0)
-                          (loop [i :range [line-start line-end]
-                                 :let [c (children i)
-                                       cw (c :width)]]
-                            (+= w cw))
-                          w)]]
-      #
-      (var line-h 0)
-      (var x 0)
-      (with-matrix
-        (set x (- width line-w))
-        (rl-translatef (- width line-w) 0 0)
-
-        (loop [i :range [line-start line-end]
-               :let [c (children i)
-                     {:width w
-                      :height h} c]]
-          (render c)
-
-          (put c :left x)
-          (put c :top y)
-
-          (+= x w)
-
-          (rl-translatef w 0 0)
-          (set line-h (max line-h h)))
-
-        (+= y line-h)
-        (rl-translatef 0 line-h 0)
-
-        (set line-start line-end))
-      #
-))
-
-  #
-)
-
 (varfn flow-render-children
   [{:children children
     :layout/lines lines
@@ -240,6 +191,61 @@
 ))
 
   #  (print "<< done rendering children")
+
+  #
+)
+
+
+# TODO: figure out align-sizing etc
+
+(defn align-render-children
+  [el]
+  (def {:children children
+        :layout/lines lines
+        :width width
+        :horizontal hori} el)
+
+  (if-not (= hori :right)
+    (flow-render-children el)
+
+    (with-matrix
+      (var line-start 0)
+      (var y 0)
+      (loop [line-end :in lines
+             :let [line-w (do
+                            (var w 0)
+                            (loop [i :range [line-start line-end]
+                                   :let [c (children i)
+                                         cw (c :width)]]
+                              (+= w cw))
+                            w)]]
+        #
+        (var line-h 0)
+        (var x 0)
+        (with-matrix
+          (set x (- width line-w))
+          (rl-translatef (- width line-w) 0 0)
+
+          (loop [i :range [line-start line-end]
+                 :let [c (children i)
+                       {:width w
+                        :height h} c]]
+            (render c)
+
+            (put c :left x)
+            (put c :top y)
+
+            (+= x w)
+
+            (rl-translatef w 0 0)
+            (set line-h (max line-h h)))
+
+          (+= y line-h)
+          (rl-translatef 0 line-h 0)
+
+          (set line-start line-end))
+        #
+)))
 
   #
 )

@@ -57,7 +57,8 @@
       [:block {:weight 1}
        "a"]
       [:block {:width 100}
-       "b"]]]]
+       [:align {:horizontal :left}
+        "b"]]]]]
    [:block {}]
    [:shrink {}
     [:row {}
