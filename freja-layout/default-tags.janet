@@ -371,6 +371,32 @@ hej
       (add-default-props props)
       (put-many :color color)))
 
+(defn event-handler
+  ````
+Useful for handling any kind of event, even if it is not
+happening inside of the layout bounding box.
+
+Contrast this to button which will only capture
+click events done within its bounds.
+
+`props` only supports:
+- :on-event -- a function taking two arguments, `self` and `ev`
+-- `self` is the element that `[:event-handler ...]` compiled into
+-- `ev` is the event, e.g. `[:press [10 20]]`
+
+## Example
+```
+[:event-handler {:on-event
+                  (fn [self ev] (pp ev))} # will pretty print all events
+  [:block {:width 0 :height 0}]           # despite being super tiny
+```
+````
+  [props & _]
+  (-> (dyn :element)
+      (put-many
+        :on-event (props :on-event)
+        :props props)))
+
 # :block is the same as flow when compiling
 # but the semantic meaning is that it will grow
 # to the max-width of its parent
@@ -381,4 +407,5 @@ hej
             :text @{:f text}
             :padding @{:f padding}
             :align @{:f align}
-            :background @{:f background}})
+            :background @{:f background}
+            :event-handler @{:f event-handler}})

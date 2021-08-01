@@ -47,61 +47,62 @@
 
 (defn hiccup
   [props & children]
-  [:padding {:left 600 :top 30}
-   #"hej"
-   #[:block {}]
+  [:event-handler {:on-event (fn [self ev] (pp ev))}
+   [:padding {:left 600 :top 30}
+    #"hej"
+    #[:block {}]
 
-   [:background {:color :green}
+    [:background {:color :green}
+     [:shrink {}
+      [:row {}
+       [:block {:weight 1}
+        "a"]
+       [:block {:width 100}
+        [:align {:horizontal :left}
+         "b"]]]]]
+    [:block {}]
     [:shrink {}
-     [:row {}
-      [:block {:weight 1}
-       "a"]
-      [:block {:width 100}
-       [:align {:horizontal :left}
-        "b"]]]]]
-   [:block {}]
-   [:shrink {}
-    [:row {}
-     [:background {:weight nil :color :pink}
-      [:padding {:all 10}
-       [:clickable {:on-click |(do (pp $)
-                                 (e/put! props :a 10))}
-        [:block {} "Open"]]]]
-
-     [:background {:weight 1 :color :orange}
-      [:block {}
-       [:align {:horizontal :right}
-        "Ctrl+OOOxdO"]]]]
-    [:row {}
-     [:background {:weight nil :color :pink}
-      [:padding {:all 10}
-       [:clickable {:on-click |(do (pp $)
-                                 (e/put! props :a 10))}
-        [:block {} "Open"]]]]
-
-     [:background {:weight 1 :color :orange}
-      [:block {}
-       [:align {:horizontal :right}
-        "Ctrl+O"]]]]]
-
-   [:block {}]
-
-   [:background {:color :red}
-
-    [:block {}
      [:row {}
       [:background {:weight nil :color :pink}
        [:padding {:all 10}
         [:clickable {:on-click |(do (pp $)
                                   (e/put! props :a 10))}
-         [:block {} "Open YEAH"]]]]
+         [:block {} "Open"]]]]
 
       [:background {:weight 1 :color :orange}
        [:block {}
         [:align {:horizontal :right}
-         "Ctrl"]]]]
+         "Ctrl+OOOxdO"]]]]
+     [:row {}
+      [:background {:weight nil :color :pink}
+       [:padding {:all 10}
+        [:clickable {:on-click |(do (pp $)
+                                  (e/put! props :a 10))}
+         [:block {} "Open"]]]]
 
-     [list123 {:p props}]]]])
+      [:background {:weight 1 :color :orange}
+       [:block {}
+        [:align {:horizontal :right}
+         "Ctrl+O"]]]]]
+
+    [:block {}]
+
+    [:background {:color :red}
+
+     [:block {}
+      [:row {}
+       [:background {:weight nil :color :pink}
+        [:padding {:all 10}
+         [:clickable {:on-click |(do (pp $)
+                                   (e/put! props :a 10))}
+          [:block {} "Open YEAH"]]]]
+
+       [:background {:weight 1 :color :orange}
+        [:block {}
+         [:align {:horizontal :right}
+          "Ctrl"]]]]
+
+      [list123 {:p props}]]]]])
 
 
 (comment

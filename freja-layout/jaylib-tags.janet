@@ -26,6 +26,8 @@
                    :relative-sizing rel/row-sizing}
             :background @{:f dt/background
                           :render jr/background-render
-                          :relative-sizing rel/flow-sizing}})
+                          :relative-sizing rel/flow-sizing}
+            :event-handler @{:f dt/event-handler
+                             :relative-sizing rel/flow-sizing}})
 
 (def render jr/render)
