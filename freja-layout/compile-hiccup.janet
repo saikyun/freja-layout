@@ -145,22 +145,14 @@
 (defn compile-children
   [children &keys {:old-children old-children
                    :tags tags}]
-  #(tracev element)
-  #(tracev old-children)
-
-  #(put el :children
   (seq [i :range [0 (length children)]
         :let [c (children i)
               old-c (get old-children i)]
         :when (not (nil? c))]
     (compile c :element old-c
              :tags tags))
-  #)
 
-  #(put el :nof-children (length (el :children)))
-
-  #el
-)
+  children)
 
 
 (setdyn :pretty-format "%.4M")

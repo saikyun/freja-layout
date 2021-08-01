@@ -1,4 +1,5 @@
 (import ../freja-layout/jaylib-tags :as jt)
+(import ../freja-layout/sizing/relative :as rs)
 (import freja/hiccup :as h)
 (import freja/events :as e)
 (use freja/defonce)
@@ -44,6 +45,18 @@
           [:align {:horizontal :right}
            "Ctrl+O"]]]]])])
 
+(defn inline
+  [props & _children]
+  (def w 100)
+  (def h 50)
+  (tracev
+    @{:render (fn [{:width w :height h}]
+                (draw-rectangle 0 0 w h :yellow))
+      :relative-sizing rs/block-sizing
+      :children []
+      :preset-width (tracev w)
+      :preset-height h
+      :props {:width w :height h}}))
 
 (defn hiccup
   [props & children]
@@ -51,6 +64,8 @@
    [:padding {:left 600 :top 30}
     #"hej"
     #[:block {}]
+
+    [inline {}]
 
     [:background {:color :green}
      [:shrink {}
