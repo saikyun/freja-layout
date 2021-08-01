@@ -150,9 +150,7 @@
               old-c (get old-children i)]
         :when (not (nil? c))]
     (compile c :element old-c
-             :tags tags))
-
-  children)
+             :tags tags)))
 
 
 (setdyn :pretty-format "%.4M")
@@ -230,10 +228,9 @@ hiccup was:
             (print "compiling: " f-or-kw))
 
           (with-dyns [:element elem]
-            (def children
-              (compile-children children
-                                :old-children (elem :compilation/children)
-                                :tags tags))
+            (def children (compile-children children
+                                            :old-children (elem :compilation/children)
+                                            :tags tags))
 
             (when (dyn :freja/log)
               (pp hiccup))
