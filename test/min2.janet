@@ -50,13 +50,14 @@
   (def w 100)
   (def h 50)
   (tracev
-    @{:render (fn [{:width w :height h}]
-                (draw-rectangle 0 0 w h :yellow))
-      :relative-sizing rs/block-sizing
-      :children []
-      :preset-width (tracev w)
-      :preset-height h
-      :props {:width w :height h}}))
+    (merge-into (dyn :element)
+                @{:render (fn [{:width w :height h}]
+                            (draw-rectangle 0 0 w h :yellow))
+                  :relative-sizing rs/block-sizing
+                  :children []
+                  :preset-width (tracev w)
+                  :preset-height h
+                  :props {:width w :height h}})))
 
 (defn hiccup
   [props & children]
