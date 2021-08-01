@@ -274,9 +274,9 @@ hiccup was:
 
                          (do
                            (when tag-data
-                             (put elem :tag f-or-kw))
+                             (put res :tag f-or-kw))
 
-                           (-> elem
+                           (-> res
                                (put :f f)
                                (put :children children)))))
 
