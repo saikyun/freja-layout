@@ -71,7 +71,7 @@
 (do #(run! (put sh-state :input "ls"))
   :ok)
 
-(use jaylib)
+(use freja-jaylib)
 
 (defn text-area
   [{:state state

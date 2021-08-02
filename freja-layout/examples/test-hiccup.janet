@@ -7,7 +7,7 @@
 (import freja/events :as e)
 (import freja/frp)
 (use freja/defonce)
-(use jaylib)
+(use freja-jaylib)
 
 (setdyn :pretty-format "%.40M")
 

@@ -9,7 +9,7 @@
 (import freja/input :as i)
 (import freja/new_gap_buffer :as gb)
 (use freja/defonce)
-(use jaylib)
+(use freja-jaylib)
 
 (use profiling/profile)
 

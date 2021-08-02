@@ -3,7 +3,7 @@
 (import freja/hiccup :as h)
 (import freja/events :as e)
 (use freja/defonce)
-(use jaylib)
+(use freja-jaylib)
 
 (use profiling/profile)
 

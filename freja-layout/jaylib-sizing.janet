@@ -1,6 +1,6 @@
 (import ./compile-hiccup :as ch)
 (use ./put-many)
-(import jaylib)
+(import freja-jaylib)
 
 (defmacro eol
   []

@@ -1,4 +1,4 @@
-(use jaylib)
+(use freja-jaylib)
 (import ./layouting2 :prefix "" :fresh true)
 (import ./render-layouting2 :as r :fresh true)
 (import freja/events :as e)

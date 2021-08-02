@@ -1,4 +1,4 @@
-(use jaylib)
+(use freja-jaylib)
 
 (defn text-render
   [props]
@@ -25,7 +25,7 @@
   (draw-rectangle 0 0 width height color))
 
 
-(use jaylib)
+(use freja-jaylib)
 
 (defmacro with-matrix
   [& body]

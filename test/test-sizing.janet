@@ -1,7 +1,7 @@
 (import ../sizing :as s :fresh true)
 (import ../compile-hiccup :as ch :fresh true)
 (import ../jaylib-tags :as jt :fresh true)
-(use jaylib)
+(use freja-jaylib)
 
 (setdyn :pretty-format "%.40M")
 

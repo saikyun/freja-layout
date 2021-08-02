@@ -2,7 +2,7 @@
 (import ./hiccup2 :as h)
 (import freja/events :as e)
 (use freja/defonce)
-(use jaylib)
+(use freja-jaylib)
 
 (setdyn :pretty-format "%.40M")
 

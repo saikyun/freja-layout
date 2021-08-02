@@ -1,4 +1,4 @@
-(use jaylib)
+(use freja-jaylib)
 (import ./assets :as a)
 
 (defmacro with-matrix

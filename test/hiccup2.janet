@@ -7,7 +7,7 @@
 (import spork/test)
 
 # TODO: remove
-(use jaylib)
+(use freja-jaylib)
 
 (defonce render-tree @{})
 

@@ -1,4 +1,4 @@
-(use jaylib)
+(use freja-jaylib)
 (import ./layouting2 :prefix "" :fresh true)
 (import freja/events :as e)
 (import ./hiccup)

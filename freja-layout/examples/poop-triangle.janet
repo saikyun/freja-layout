@@ -6,7 +6,7 @@
 
 (import freja/frp)
 (use freja/defonce)
-(use jaylib)
+(use freja-jaylib)
 
 (print)
 (print "beginning of test-hiccup")
