@@ -46,7 +46,7 @@ To add no word wrapping, one could add a "no-break" option.
   (def loaded-font ((dyn :text/get-font) font size))
 
   (def [space-w _] (freja-jaylib/measure-text-ex
-                     (loaded-font " " size spacing)))
+                     loaded-font " " size spacing))
 
   (each l lines
     (let [words (string/split " " l)]
