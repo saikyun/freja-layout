@@ -43,13 +43,15 @@ To add no word wrapping, one could add a "no-break" option.
   (def new-lines @[])
   (var current-line @"")
 
-  (def [space-w _] (jaylib/measure-text-ex
-  ((dyn :text/get-font) font size) " " size spacing))
+  (def loaded-font (dyn :text/get-font) font size)
+
+  (def [space-w _] (freja-jaylib/measure-text-ex
+                     (loaded-font " " size spacing)))
 
   (each l lines
     (let [words (string/split " " l)]
       (each word words
-        (let [[ww wh] (jaylib/measure-text-ex ((dyn :text/get-font) font size) word size spacing)]
+        (let [[ww wh] (freja-jaylib/measure-text-ex loaded-font word size spacing)]
           (when (and (pos? x) (> (+ ww x) max-width))
             # if we end up here, a line was too long
             (eol))
