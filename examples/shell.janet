@@ -1,12 +1,13 @@
 # hitting ctrl+l
-
-(import ./layouting2 :prefix "" :fresh true)
+(import ../freja-layout/jaylib-tags :as jt)
+(import ../freja-layout/sizing/relative :as rs)
+(import ../freja-layout/default-tags :as dt)
+(import freja/hiccup :as h)
 (import freja/events :as e)
-(import ./hiccup)
-(import freja/state)
-(import freja/frp)
-(import freja/defonce :prefix "")
 (import freja/new_gap_buffer :as gb)
+(import freja/frp)
+(use freja/defonce)
+(use freja-jaylib)
 
 (defonce sh-state @{})
 
@@ -86,8 +87,12 @@
           [width
            height])
 
-  [block {:height height}
-   @{:render (fn [self]
+  [:block {:height height}
+   @{:children []
+     :props []
+     :relative-sizing rs/block-sizing
+
+     :render (fn [self]
                (:draw state)
                #(pp (get-in state [:gb :text]))
 )
@@ -119,11 +124,11 @@
                               2
                               1)))
 
-                 (when (in-rec? pos
-                                0
-                                0
-                                (self :width)
-                                (self :height))
+                 (when (dt/in-rec? pos
+                                   0
+                                   0
+                                   (self :width)
+                                   (self :height))
                    true))
 
      :width (get-in text-area-state [:gb :size 0])
@@ -132,15 +137,15 @@
 
 (defn shell
   [props & _]
-  [padding
+  [:padding
    {:top 30
     :left 600}
-   [background {:color 0x11111111}
-    [padding {:all 5}
-     [grid {:height 660
-            :direction :vertical
-            :space-between true
-            #:spacing 2
+   [:background {:color 0x11111111}
+    [:padding {:all 5}
+     [:block {:height 660
+              :direction :vertical
+              :space-between true
+              #:spacing 2
 }
 
       [text-area {:state text-area-state}]
@@ -149,9 +154,7 @@
                   :state input-state}]]]]])
 
 
-(set c (hiccup/new-component
+(set c (h/new-layer
          :shell
          shell
          sh-state))
-
-(frp/subscribe! state/focus123 c)

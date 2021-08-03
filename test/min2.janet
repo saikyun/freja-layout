@@ -5,28 +5,9 @@
 (use freja/defonce)
 (use freja-jaylib)
 
-(use profiling/profile)
-
 (setdyn :pretty-format "%.40M")
 
 (defonce my-props @{})
-
-
-(defn hiccup
-  [props & children]
-  [:padding {:top 30
-             :left 600}
-   #[:block {}
-   [:background {:color 0x00ff00ff}
-    [:flow {}
-     "hej"
-     [:background {:color :red}
-      [:flow {} "lul2"]]
-     "lul"]]]
-  #]
-)
-
-## TODO: set row height too in definite
 
 (defn list123
   [props & _]

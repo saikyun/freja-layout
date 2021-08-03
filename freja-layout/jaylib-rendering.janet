@@ -36,9 +36,8 @@
        ([err fib]
          (do
            (rl-pop-matrix)
-           (debug/stacktrace fib err)
-           #(error err)
-)))))
+           #(debug/stacktrace fib err)
+           (propagate err fib))))))
 
 (defmacro with-translation
   [[s v] & body]
@@ -132,8 +131,9 @@
       ([err fib]
         (rl-pop-matrix)
         (rl-pop-matrix)
-        #        (error err)
-        (debug/stacktrace fib err)))))
+        (propagate err fib)
+        #(debug/stacktrace fib err)
+))))
 
 
 (varfn flow-render-children
