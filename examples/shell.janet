@@ -4,10 +4,15 @@
 (import ../freja-layout/default-tags :as dt)
 (import freja/hiccup :as h)
 (import freja/events :as e)
+(import freja/file-handling :as fh)
+
 (import freja/new_gap_buffer :as gb)
 (import freja/frp)
+(import freja/state)
 (use freja/defonce)
 (use freja-jaylib)
+
+(setdyn :pretty-format "%.40M")
 
 (defonce sh-state @{})
 
@@ -25,18 +30,25 @@
 
 #(peg/match '(* (if-not ``\`` 1) ``\"``) `` \"``)
 
+(peg/match '(* "freja" :s+ ':w+) "freja abc")
+
 (defn run!
   [state in]
-  (try (do
-         (def p (os/spawn #(peg/match parse-spaces in)
-                          (tracev ["sh" "-c" (string in)])
-                          :p {:in :pipe :out :pipe}))
-         (def res (:read (p :out) :all))
-         (:wait p)
+  (try
+    (if-let [file-to-open (get (peg/match '(* "freja" :s+ '(some (if (not :s) 1))) in) 0)]
+      (do
+        (print "Got " in ", gonna open " file-to-open)
+        (fh/load-file frp/text-area file-to-open))
+      (do
+        (def p (os/spawn #(peg/match parse-spaces in)
+                         (tracev ["sh" "-c" (string in)])
+                         :p {:in :pipe :out :pipe}))
+        (def res (:read (p :out) :all))
+        (:wait p)
 
-         (gb/replace-content
-           (get-in state [:text-area :gb])
-           res))
+        (gb/replace-content
+          (get-in state [:text-area :gb])
+          res)))
     ([err fib]
       (debug/stacktrace fib err)
       (gb/replace-content
@@ -44,6 +56,7 @@
         err))))
 
 (defonce text-area-state (frp/default-text-area))
+(put-in text-area-state [:gb :background] 0x00000022)
 (put-in text-area-state [:gb :text] @"Welcome! :)")
 (put text-area-state :id :history)
 
@@ -75,64 +88,69 @@
 (use freja-jaylib)
 
 (defn text-area
-  [{:state state
-    :max-width max-width
-    :max-height max-height
-    :height height} & _]
+  [props & _]
+  (def {:state state
+        :max-width max-width
+        :max-height max-height
+        :height height
+        :width width} props)
+  (-> (dyn :element)
+      (dt/add-default-props props)
+      (merge-into
+        @{:children []
+          :props {:width width
+                  :height height
+                  :max-width max-width
+                  :max-height max-height}
 
-  (def width max-width)
-  (def height (min max-height (or height 9999999)))
+          #:width (get-in text-area-state [:gb :size 0])
+          #:height (get-in text-area-state [:gb :size 1])
 
-  (put-in state [:gb :size]
-          [width
-           height])
+          :relative-sizing rs/block-sizing
 
-  [:block {:height height}
-   @{:children []
-     :props []
-     :relative-sizing rs/block-sizing
+          :render (fn [self]
+                    (put-in state [:gb :size]
+                            [(self :width) (self :height)])
 
-     :render (fn [self]
-               (:draw state)
-               #(pp (get-in state [:gb :text]))
+                    (:draw state)
+                    #(pp (get-in state [:gb :text]))
 )
 
-     :on-event (fn [self ev]
+          :on-event (fn [self ev]
+                      #(pp self)
+                      #(print "start " (state :id))
 
-                 #(print "start " (state :id))
+                      #(tracev [(dyn :offset-x) (dyn :offset-y)])
 
-                 #(tracev [(dyn :offset-x) (dyn :offset-y)])
+                      (defn update-pos
+                        [[x y]]
+                        [(- x
+                            (dyn :offset-x 0))
+                         (- y
+                            (dyn :offset-y 0))])
 
-                 (defn update-pos
-                   [[x y]]
-                   [(- x
-                       (dyn :offset-x 0))
-                    (- y
-                       (dyn :offset-y 0))])
+                      (def new-ev (if (= (first ev) :scroll)
+                                    [(ev 0)
+                                     (ev 1)
+                                     (update-pos (ev 2))]
+                                    [(ev 0)
+                                     (update-pos (ev 1))]))
 
-                 (def new-ev (if (= (first ev) :scroll)
-                               [(ev 0)
-                                (ev 1)
-                                (update-pos (ev 2))]
-                               [(ev 0)
-                                (update-pos (ev 1))]))
+                      #(pp new-ev)
 
-                 (:on-event state new-ev)
+                      (:on-event state new-ev)
 
-                 (def pos (new-ev
-                            (if (= :scroll (first new-ev))
-                              2
-                              1)))
+                      (def pos (new-ev
+                                 (if (= :scroll (first new-ev))
+                                   2
+                                   1)))
 
-                 (when (dt/in-rec? pos
-                                   0
-                                   0
-                                   (self :width)
-                                   (self :height))
-                   true))
-
-     :width (get-in text-area-state [:gb :size 0])
-     :height (get-in text-area-state [:gb :size 1])}])
+                      (when (dt/in-rec? pos
+                                        0
+                                        0
+                                        (self :width)
+                                        (self :height))
+                        true))})))
 
 
 (defn shell
@@ -148,7 +166,8 @@
               #:spacing 2
 }
 
-      [text-area {:state text-area-state}]
+      [text-area {:height 500
+                  :state text-area-state}]
 
       [text-area {:height 20
                   :state input-state}]]]]])
