@@ -144,11 +144,25 @@
 
   (var min-h 0)
 
+  (var extra 0)
+
   (loop [c :in children
          :let [{:width cw} c
                {:weight weight} (c :props)]]
     (when (and weight (not cw))
-      (put c :width (* weight width-per-weight)))
+      # the leftover / extra stuff is done in order to
+      # always have int widths, but also always
+      # take up all of the available width
+      (let [w (* weight width-per-weight)
+            floored-w (math/floor w)
+            leftover (- w floored-w)]
+        (+= extra leftover)
+        # need to do this because float 1 is not always 1
+        (if (tracev (>= extra 0.9999999))
+          (do
+            (-- extra)
+            (put c :width (inc floored-w)))
+          (put c :width floored-w))))
     (set min-h (max min-h (get c :min-height))))
 
   (put el :min-height min-h)

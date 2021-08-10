@@ -234,6 +234,45 @@
   # the second child gets the rest (lonely weight 1 of 72px = 72px)
   (assert2 (= 72 (get-in el [:children 1 :width]))))
 
+
+(let [el (compile [:row {}
+                   [:flow {:weight 1}]
+                   [:flow {:width 1}]
+                   [:flow {:weight 1}]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 200 600)
+      with-sizes (set-relative-size el 200 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # even if children can't get even distribution of pixels
+  # it should always add upp to the width
+  (assert2 (= (el :width) (+ ;(map |($ :width) (el :children))))))
+
+
+(let [el (compile [:row {}
+                   [:flow {:weight 1}]
+                   [:flow {:width 1}]
+                   [:flow {:weight 4}]
+                   [:flow {:width 2}]
+                   [:flow {:weight 4}]
+                   [:flow {:width 3}]
+                   [:flow {:weight 9}]
+                   [:flow {:width 4}]
+                   [:flow {:weight 999}]
+                   [:flow {:width 1}]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 203 600)
+      with-sizes (set-relative-size el 203 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # even if children can't get even distribution of pixels
+  # it should always add upp to the width
+  (assert2 (= (el :width) (+ ;(map |($ :width) (el :children))))))
+
 #
 #
 #
