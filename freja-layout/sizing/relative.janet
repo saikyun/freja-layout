@@ -158,7 +158,7 @@
             leftover (- w floored-w)]
         (+= extra leftover)
         # need to do this because float 1 is not always 1
-        (if (tracev (>= extra 0.9999999))
+        (if (>= extra 0.9999999)
           (do
             (-- extra)
             (put c :width (inc floored-w)))
