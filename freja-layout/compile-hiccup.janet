@@ -1,5 +1,8 @@
 (use ./default-tags)
 
+(use profiling/profile)
+
+
 (defn remove-keys
   [t ks]
   (def nt @{})
@@ -145,12 +148,20 @@
 (defn compile-children
   [children &keys {:old-children old-children
                    :tags tags}]
-  (seq [i :range [0 (length children)]
-        :let [c (children i)
-              old-c (get old-children i)]
-        :when (not (nil? c))]
-    (compile c :element old-c
-             :tags tags)))
+  (def new-children (or old-children @[]))
+
+  (var put-i 0)
+
+  (loop [i :range [0 (length children)]
+         :let [c (children i)
+               old-c (get old-children i)]
+         :when (not (nil? c))]
+    (->> (compile c :element old-c
+                  :tags tags)
+         (put new-children put-i))
+    (++ put-i))
+
+  new-children)
 
 
 (setdyn :pretty-format "%.4M")
@@ -166,60 +177,70 @@
 
 (def lul @{})
 
+(defmacro assertm
+  [check &opt err]
+  (with-syms [v]
+    ~(let [,v ,check]
+       (if ,v
+         ,v
+         (error ,(if err err "assert failure"))))))
+
+(defn nof-non-nil
+  [es]
+  (var i 0)
+  (each e es
+    (when e (++ i))
+    i))
+
 (varfn compile
-  [hiccup &keys {:element element
-                 :tags tags}]
+  [hiccup-or-table &keys {:element element
+                          :tags tags}]
   #(print "compiling...")
   #(pp hiccup)
   #(print "old: ")
   #(pp element)
 
-  (if (table? hiccup)
+  (if (table? hiccup-or-table)
     # this means it's already compiled, e.g. a precompiled child
-    hiccup
+    hiccup-or-table
     (do
-      (def hiccup (if (string? hiccup)
-                    [:text {:text hiccup}]
-                    hiccup))
+      (def hiccup (if (string? hiccup-or-table)
+                    [:text {:text hiccup-or-table}]
+                    hiccup-or-table))
 
-      (assert tags "need :tags for compiling")
+      (assertm tags "need :tags for compiling")
 
       (def [f-or-kw props] hiccup)
+
       (def tag-data (when (keyword? f-or-kw)
                       (tags f-or-kw)))
+
       (def f (if tag-data
                (tag-data :f)
                f-or-kw))
+
       (def children (drop 2 hiccup))
 
-      (assert (dictionary? props)
-              (string/format
-                ``props must be table or struct, was:
+      (assertm (dictionary? props)
+               (string/format
+                 ``props must be table or struct, was:
 %.40M
 
 hiccup was:
 %.40M
 ``
-                props
-                hiccup))
-
-      #(print "compiling...")
-      #(pp hiccup)
+                 props
+                 hiccup))
 
       (if (and element
-               (# tracev
-               do
- (same? (#tracev
-        do
- element)
-        (#tracev
-        do
- hiccup))))
+               (same? element
+                      hiccup))
         (do
           (compile-children children
                             :old-children (element :compilation/children)
                             :tags tags)
           element)
+
         (let [elem (or element
                        @{})]
           (clear-table elem)
@@ -242,16 +263,9 @@ hiccup was:
             (def outer (if (indexed? res)
                          (do
 
-                           ### TODO: probably need to rethink this
-                           # need to come up with small example
-                           # that breaks
-
                            (def inner (compile res
                                                :element (elem :inner/element)
                                                :tags tags))
-
-                           #(print "inside index, after compi")
-                           #(pp inner)
 
                            (put lul :a res)
 
@@ -271,9 +285,7 @@ hiccup was:
 
             (-> outer
                 (put :compilation/children children)
-                (put :compilation/nof-children (length (filter
-                                                         (comptime (comp nil? not))
-                                                         children)))
+                (put :compilation/nof-children (nof-non-nil children))
                 (put :compilation/props props)
                 (put :compilation/f f))
 
