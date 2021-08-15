@@ -1,7 +1,7 @@
 (use freja-jaylib)
 
 (defn text-render
-  [props parent-x parent-y]
+  [props x y]
   (def {:color color
         :text text
         :font font
@@ -22,8 +22,8 @@
   [{:width width
     :height height
     :color color}
-   parent-x
-   parent-y]
+   x
+   y]
   (draw-rectangle 0 0 width height color))
 
 
@@ -60,7 +60,7 @@
   nil)
 
 (defn render
-  [el parent-x parent-y]
+  [el x y]
   (def {:render-children render-children
         :render render}
     el)
@@ -70,14 +70,16 @@
 
   #(print (el :tag))
   #(tracev p)
-  (render el parent-x parent-y)
+  (render el x y)
 
   (with-translation [o (el :offset)]
     #(pp (el :offset))
     #(tracev o)
     (render-children el
-                     (+ (get-in el [:offset 3] 0) parent-x)
-                     (+ (get-in el [:offset 0] 0) parent-y))))
+                     (+ (get-in el [:offset 3] 0)
+                        x)
+                     (+ (get-in el [:offset 0] 0)
+                        y))))
 
 (varfn flow-render-children
   [{:children children
@@ -88,14 +90,15 @@
 
   (def screen-h (get-screen-height))
 
-  #(print ">> rendering children for")
+  #(print ">> rendering " (length children) " children for")
   #(print f)
 
   (default lines [0 (length children)])
 
+  (var line-start 0)
+  (var y 0)
+
   (with-matrix
-    (var line-start 0)
-    (var y 0)
     (loop [line-end :in lines
            :while (< (+ parent-y y) screen-h)]
       #
@@ -115,7 +118,10 @@
           (put c :left x)
           (put c :top y)
 
-          (render c parent-x parent-y)
+          (render c (+ x
+                       parent-x)
+                  (+ y
+                     parent-y))
 
           #(print)
 
@@ -139,7 +145,7 @@
       #
 ))
 
-  #  (print "<< done rendering children")
+  #(print "<< done rendering children on y " y " / " screen-h)
 
   #
 )
@@ -182,7 +188,7 @@
             (put c :left x)
             (put c :top y)
 
-            (render c parent-x parent-y)
+            (render c (+ x parent-x) (+ y parent-y))
 
             (+= x w)
 
