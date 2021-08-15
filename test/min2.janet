@@ -5,8 +5,6 @@
 (use freja/defonce)
 (use freja-jaylib)
 
-(print-results)
-
 (setdyn :pretty-format "%.40M")
 
 (defonce my-props @{})

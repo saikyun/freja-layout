@@ -1,7 +1,7 @@
 (use freja-jaylib)
 
 (defn text-render
-  [props]
+  [props parent-x parent-y]
   (def {:color color
         :text text
         :font font
@@ -21,7 +21,9 @@
 (defn background-render
   [{:width width
     :height height
-    :color color}]
+    :color color}
+   parent-x
+   parent-y]
   (draw-rectangle 0 0 width height color))
 
 
@@ -54,11 +56,11 @@
 (var flow-render-children nil)
 
 (defn noop
-  [_]
+  [_ _ _]
   nil)
 
 (defn render
-  [el]
+  [el parent-x parent-y]
   (def {:render-children render-children
         :render render}
     el)
@@ -68,78 +70,23 @@
 
   #(print (el :tag))
   #(tracev p)
-  (render el)
+  (render el parent-x parent-y)
 
   (with-translation [o (el :offset)]
     #(pp (el :offset))
     #(tracev o)
-    (render-children el)))
-
-(varfn flow-render-children-old
-  [{:children cs
-    :tag tag
-    :content-width content-width}]
-
-  (unless (empty? cs)
-    #(print "gonna print children")
-
-    (var x 0)
-    (var y 0)
-    (var row-h 0)
-
-    (try
-      (do
-        (rl-push-matrix)
-
-        (rl-push-matrix)
-
-        (loop [c :in cs
-               :let [{:width w
-                      :height h} c]]
-
-          #(print "tag: " (c :tag))
-
-          (when (and (pos? x)
-                     (> (+ x w) content-width))
-            (rl-pop-matrix)
-
-            (set x 0)
-            (+= y row-h)
-
-            (rl-translatef 0 row-h 0)
-
-            (set row-h 0)
-
-            (rl-push-matrix))
-
-          (render c)
-
-          # (print "pos: " x " " y)
-
-          (rl-translatef w 0 0)
-
-          (put c :left x)
-          (put c :top y)
-
-          (+= x w)
-
-          (set row-h (max row-h h))
-          #
-)
-        (rl-pop-matrix)
-        (rl-pop-matrix))
-      ([err fib]
-        (rl-pop-matrix)
-        (rl-pop-matrix)
-        (propagate err fib)
-        #(debug/stacktrace fib err)
-))))
-
+    (render-children el
+                     (+ (get-in el [:offset 3] 0) parent-x)
+                     (+ (get-in el [:offset 0] 0) parent-y))))
 
 (varfn flow-render-children
   [{:children children
     :layout/lines lines
-    :f f}]
+    :f f}
+   parent-x
+   parent-y]
+
+  (def screen-h (get-screen-height))
 
   #(print ">> rendering children for")
   #(print f)
@@ -149,7 +96,8 @@
   (with-matrix
     (var line-start 0)
     (var y 0)
-    (loop [line-end :in lines]
+    (loop [line-end :in lines
+           :while (< (+ parent-y y) screen-h)]
       #
       (var line-h 0)
       (var x 0)
@@ -164,14 +112,15 @@
           #(print (c :f))
           #(print "???" (c :width) "-" w)
 
-          (render c)
+          (put c :left x)
+          (put c :top y)
+
+          (render c parent-x parent-y)
 
           #(print)
 
           #(print (c :f))
 
-          (put c :left x)
-          (put c :top y)
 
           #(tracev x) (tracev w)
           #(print (string/format "%.40M" c))
@@ -195,15 +144,14 @@
   #
 )
 
-
-# TODO: figure out align-sizing etc
-
 (defn align-render-children
-  [el]
+  [el parent-x parent-y]
   (def {:children children
         :layout/lines lines
         :width width
         :horizontal hori} el)
+
+  (def screen-h (get-screen-height))
 
   (if-not (= hori :right)
     (flow-render-children el)
@@ -218,7 +166,8 @@
                                    :let [c (children i)
                                          cw (c :width)]]
                               (+= w cw))
-                            w)]]
+                            w)]
+             :while (< (+ parent-y y) screen-h)]
         #
         (var line-h 0)
         (var x 0)
@@ -230,10 +179,10 @@
                  :let [c (children i)
                        {:width w
                         :height h} c]]
-            (render c)
-
             (put c :left x)
             (put c :top y)
+
+            (render c parent-x parent-y)
 
             (+= x w)
 
