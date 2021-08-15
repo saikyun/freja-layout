@@ -147,7 +147,8 @@
 
 (defn compile-children
   [children &keys {:old-children old-children
-                   :tags tags}]
+                   :tags tags
+                   :to-init to-init}]
   (def new-children (or old-children @[]))
 
   (var put-i 0)
@@ -157,7 +158,8 @@
                old-c (get old-children i)]
          :when (not (nil? c))]
     (->> (compile c :element old-c
-                  :tags tags)
+                  :tags tags
+                  :to-init to-init)
          (put new-children put-i))
     (++ put-i))
 
@@ -194,7 +196,8 @@
 
 (varfn compile
   [hiccup-or-table &keys {:element element
-                          :tags tags}]
+                          :tags tags
+                          :to-init to-init}]
   #(print "compiling...")
   #(pp hiccup)
   #(print "old: ")
@@ -238,12 +241,13 @@ hiccup was:
         (do
           (compile-children children
                             :old-children (element :compilation/children)
-                            :tags tags)
+                            :tags tags
+                            :to-init to-init)
           element)
 
-        (let [elem (or element
+        (let [elem (or (-?> element
+                            table/clear)
                        @{})]
-          (clear-table elem)
 
           (when (dyn :freja/log)
             (print "compiling: " f-or-kw))
@@ -251,10 +255,12 @@ hiccup was:
           (with-dyns [:element elem]
             (def children (compile-children children
                                             :old-children (elem :compilation/children)
-                                            :tags tags))
+                                            :tags tags
+                                            :to-init to-init))
 
             (when (dyn :freja/log)
               (pp hiccup))
+
             (def res (f props ;children))
 
             #(print "before")
@@ -265,7 +271,8 @@ hiccup was:
 
                            (def inner (compile res
                                                :element (elem :inner/element)
-                                               :tags tags))
+                                               :tags tags
+                                               :to-init to-init))
 
                            (put lul :a res)
 
@@ -294,4 +301,17 @@ hiccup was:
 
             (when tag-data (merge-into outer tag-data))
 
+            (when-let [state (get outer :state)]
+              (unless (state :compilation/inited)
+                (put state :compilation/inited true)
+                (when (get outer :init)
+                  (array/push to-init outer))))
+
             outer))))))
+
+(defn init-all
+  [es]
+  (each e es
+    (if (function? (e :init))
+      (:init e [:init])
+      (:on-event e [:init]))))

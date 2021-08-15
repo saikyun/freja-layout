@@ -14,6 +14,11 @@ The default props are:
 :min-height -- minimum height of the element
 :max-width -- maximum width of the element (can be overriden by big children)
 :max-height -- maximum height of the element (can be overriden by big children)
+:init -- set to true to have `:on-event` of the element 
+         be called after sizing, with `[:init]` as the event
+      -- set to (fn [self ev] ...) to have that function be called after sizing
+         `ev` will be `[:init]`
+:state -- table containing state to be persisted between different compilations
 ``
   [element props]
   (def {:width width
@@ -21,7 +26,11 @@ The default props are:
         :min-width min-width
         :min-height min-height
         :max-width max-width
-        :max-height max-height} props)
+        :max-height max-height
+        :init init
+        :state state} props)
+
+  (when init (assert state "when :init is set, :state must be too"))
 
   # (put-many @{} :a x :b y) is like (-> @{} (put :a x) (put :b y))
   (put-many element
@@ -31,7 +40,9 @@ The default props are:
             :preset-max-width max-width
             :preset-min-width min-width
             :preset-max-height max-height
-            :preset-min-height min-height))
+            :preset-min-height min-height
+            :init init
+            :state state))
 
 (defn flow
   ````

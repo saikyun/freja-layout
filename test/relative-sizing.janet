@@ -1,5 +1,5 @@
 (use ../freja-layout/assert2)
-(use ../freja-layout/compile-hiccup)
+(import ../freja-layout/compile-hiccup :prefix "" :fresh true)
 (import ./test-tags :as jt :fresh true)
 (import ../freja-layout/sizing/definite :as d :fresh true)
 (import ../freja-layout/sizing/relative :prefix "" :fresh true)
@@ -272,6 +272,24 @@
   # even if children can't get even distribution of pixels
   # it should always add upp to the width
   (assert2 (= (el :width) (+ ;(map |($ :width) (el :children))))))
+
+
+# testing `init`
+(do (var outer-el nil)
+  (let [to-init @[]
+        el (compile [:flow {:init (fn [self ev]
+                                    (set outer-el self))}]
+                    :tags jt/tags
+                    :to-init to-init)
+        with-sizes (d/set-definite-sizes el 203 600)
+        with-sizes (set-relative-size el 203 600)]
+
+    (print-tree with-sizes)
+    (assert2 (table? with-sizes))
+
+    (init-all to-init)
+
+    (assert2 (= outer-el el))))
 
 #
 #
