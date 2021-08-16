@@ -160,7 +160,7 @@
   (def screen-h (get-screen-height))
 
   (if-not (= hori :right)
-    (flow-render-children el)
+    (flow-render-children el parent-x parent-y)
 
     (with-matrix
       (var line-start 0)
