@@ -32,7 +32,7 @@
   (def h 50)
   (tracev
     (merge-into (dyn :element)
-                @{:render (fn [{:width w :height h}]
+                @{:render (fn [{:width w :height h} x y]
                             (draw-rectangle 0 0 w h :yellow))
                   :relative-sizing rs/block-sizing
                   :children []

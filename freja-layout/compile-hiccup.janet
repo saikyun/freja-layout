@@ -177,8 +177,6 @@
 
   t)
 
-(def lul @{})
-
 (defmacro assertm
   [check &opt err]
   (with-syms [v]
@@ -266,15 +264,12 @@ hiccup was:
             #(print "before")
             #(pp res)
 
-            (def outer (if (indexed? res)
-                         (do
-
-                           (def inner (compile res
-                                               :element (elem :inner/element)
-                                               :tags tags
-                                               :to-init to-init))
-
-                           (put lul :a res)
+            (def outer (cond
+                         (string? res)
+                         (do (def inner (compile res
+                                                 :element (elem :inner/element)
+                                                 :tags tags
+                                                 :to-init to-init))
 
                            (merge-into elem inner)
 
@@ -282,6 +277,21 @@ hiccup was:
 
                            elem)
 
+                         (indexed? res)
+                         (do
+
+                           (def inner (compile res
+                                               :element (elem :inner/element)
+                                               :tags tags
+                                               :to-init to-init))
+
+                           (merge-into elem inner)
+
+                           (put elem :inner/element inner)
+
+                           elem)
+
+                         # else
                          (do
                            (when tag-data
                              (put res :tag f-or-kw))

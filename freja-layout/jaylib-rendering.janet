@@ -98,52 +98,52 @@
   (var line-start 0)
   (var y 0)
 
-  (with-matrix
-    (loop [line-end :in lines
-           :while (< (+ parent-y y) screen-h)]
-      #
-      (var line-h 0)
-      (var x 0)
-      (with-matrix
+  (loop [line-end :in lines
+         :while (< (+ parent-y y) screen-h)]
+    #
+    (var line-h 0)
+    (var x 0)
 
-        (loop [i :range [line-start line-end]
-               :let [c (children i)
-                     {:width w
-                      :height h} c]]
-          #(print)
-          #(print "new stuff wat")
-          #(print (c :f))
-          #(print "???" (c :width) "-" w)
+    (loop [i :range [line-start line-end]
+           :let [c (children i)
+                 {:width w
+                  :height h} c]]
+      #(print)
+      #(print "new stuff wat")
+      #(print (c :f))
+      #(print "???" (c :width) "-" w)
 
-          (put c :left x)
-          (put c :top y)
+      (put c :left x)
+      (put c :top y)
 
-          (render c (+ x
-                       parent-x)
-                  (+ y
-                     parent-y))
+      (render c (+ x
+                   parent-x)
+              (+ y
+                 parent-y))
 
-          #(print)
+      #(print)
 
-          #(print (c :f))
+      #(print (c :f))
 
 
-          #(tracev x) (tracev w)
-          #(print (string/format "%.40M" c))
-          (+= x w)
+      #(tracev x) (tracev w)
+      #(print (string/format "%.40M" c))
+      (+= x w)
 
-          (rl-translatef w 0 0)
-          (set line-h (max line-h h)))
+      (rl-translatef w 0 0)
+      (set line-h (max line-h h)))
 
-        # (print "end of line")
+    # (print "end of line")
 
-        (+= y line-h)
+    (+= y line-h)
 
-        (set line-start line-end))
+    (set line-start line-end)
 
-      (rl-translatef 0 line-h 0)
-      #
-))
+    (rl-translatef (- x) line-h 0)
+    #
+)
+
+  (rl-translatef 0 (- y) 0)
 
   #(print "<< done rendering children on y " y " / " screen-h)
 
@@ -162,7 +162,7 @@
   (if-not (= hori :right)
     (flow-render-children el parent-x parent-y)
 
-    (with-matrix
+    (do
       (var line-start 0)
       (var y 0)
       (loop [line-end :in lines
@@ -177,30 +177,30 @@
         #
         (var line-h 0)
         (var x 0)
-        (with-matrix
-          (set x (- width line-w))
-          (rl-translatef (- width line-w) 0 0)
+        #        (with-matrix
+        (set x (- width line-w))
+        (rl-translatef (- width line-w) 0 0)
 
-          (loop [i :range [line-start line-end]
-                 :let [c (children i)
-                       {:width w
-                        :height h} c]]
-            (put c :left x)
-            (put c :top y)
+        (loop [i :range [line-start line-end]
+               :let [c (children i)
+                     {:width w
+                      :height h} c]]
+          (put c :left x)
+          (put c :top y)
 
-            (render c (+ x parent-x) (+ y parent-y))
+          (render c (+ x parent-x) (+ y parent-y))
 
-            (+= x w)
+          (+= x w)
 
-            (rl-translatef w 0 0)
-            (set line-h (max line-h h)))
+          (rl-translatef w 0 0)
+          (set line-h (max line-h h)))
 
-          (+= y line-h)
-          (rl-translatef 0 line-h 0)
+        (rl-translatef (- x) line-h 0)
 
-          (set line-start line-end))
-        #
-)))
+        (+= y line-h)
 
+        (set line-start line-end))
+
+      (rl-translatef 0 (- y) 0)))
   #
 )

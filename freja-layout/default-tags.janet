@@ -184,6 +184,16 @@ You did it!
                  (put self :down true)
                  true)
 
+               [:double-click pos]
+               (when in?
+                 (put self :down true)
+                 true)
+
+               [:triple-click pos]
+               (when in?
+                 (put self :down true)
+                 true)
+
                [:release pos]
                (when (self :down)
                  (when in? ((props :on-click) ev))
