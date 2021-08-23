@@ -2,11 +2,11 @@
   [form &opt fail-form]
   ~(try
      (assert ,form
-             (string/format "%.40M %s" ',form "is not truthy"))
+             (string/format "%p %s" ',form "is not truthy"))
 
      ([err fib]
        (when-let [v ,fail-form]
          (print "relevant data:")
-         (pp v)) '
+         (pp v))
        (debug/stacktrace fib err)
        (propagate err fib))))

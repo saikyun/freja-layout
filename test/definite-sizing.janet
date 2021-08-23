@@ -1,9 +1,11 @@
 (use ../freja-layout/assert2)
 (use ../freja-layout/compile-hiccup)
-(import ../freja-layout/sizing/test-tags :as jt :fresh true)
+(import ./test-tags :as jt :fresh true)
 (use ../freja-layout/sizing/definite)
-(import ../freja-layout/assets :as a)
+(import freja/assets :as a)
+
 (a/register-default-fonts)
+(setdyn :text/get-font a/font)
 
 (setdyn :pretty-format "%.40M")
 

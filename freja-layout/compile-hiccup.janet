@@ -1,4 +1,4 @@
-(use ./default-tags)
+(import ./default-tags :prefix "" :fresh true)
 
 (use profiling/profile)
 
@@ -49,7 +49,7 @@
 
 (defn print-tree
   [t]
-  (print (string/format "%.40M"
+  (print (string/format "%p"
                         (map-tree
                           identity
                           t))))
@@ -155,7 +155,23 @@
 
   (loop [i :range [0 (length children)]
          :let [c (children i)
-               old-c (get old-children i)]
+               key (cond (table? c)
+                     (get c :key)
+
+                     (tuple? c)
+                     (get-in c [1 :key]))
+
+               old-c (if key
+                       (do (var oc nil)
+                         # TODO: might not want linear search here, instead caching the keys
+                         # but then you remove ability to
+                         # recompile a child without involving parent
+                         (each ioc (or old-children [])
+                           (when (= key (ioc :key))
+                             (set oc ioc)
+                             (break)))
+                         oc)
+                       (get old-children i))]
          :when (not (nil? c))]
     (->> (compile c :element old-c
                   :tags tags
@@ -163,19 +179,15 @@
          (put new-children put-i))
     (++ put-i))
 
+  # this happens when `old-children` is longer than `children`
+  # then we just trim it down to the size it should be
+  (when (and old-children (< put-i (length old-children)))
+    (array/remove new-children put-i (length new-children)))
+
   new-children)
 
 
 (setdyn :pretty-format "%.4M")
-
-(defn clear-table
-  [t]
-  #(print "clearing table!")
-  #(pp t)
-  (loop [k :keys t]
-    (put t k nil))
-
-  t)
 
 (defmacro assertm
   [check &opt err]
@@ -191,6 +203,9 @@
   (each e es
     (when e (++ i))
     i))
+
+
+(setdyn :pretty-format "%.40M")
 
 (varfn compile
   [hiccup-or-table &keys {:element element
@@ -237,17 +252,38 @@ hiccup was:
                (same? element
                       hiccup))
         (do
-          (compile-children children
-                            :old-children (element :compilation/children)
-                            :tags tags
-                            :to-init to-init)
+          (put element :compilation/children
+               (compile-children children
+                                 :old-children (element :compilation/children)
+                                 :tags tags
+                                 :to-init to-init))
           element)
 
-        (let [elem (or (-?> element
-                            table/clear)
+        (let [elem (or (when element
+                         (let [{:state state
+                                :compilation/children oc
+                                :inner/element ie} element
+
+                               # when the f is the same, we count it as "the same element"...
+                               same-element (= f
+                                               (element :compilation/f))]
+
+                           (table/clear element)
+
+                           # ...which means state should be kept
+                           (if same-element
+                             (do
+                               (when (dyn :freja/log)
+                                 (print "same element"))
+                               (-> element
+                                   (put :state state)
+                                   (put :inner/element ie)
+                                   (put :compilation/children oc)))
+                             element)))
                        @{})]
 
           (when (dyn :freja/log)
+            (print "has element? " (truthy? element))
             (print "compiling: " f-or-kw))
 
           (with-dyns [:element elem]
@@ -280,6 +316,8 @@ hiccup was:
                          (indexed? res)
                          (do
 
+                           (when (dyn :freja/log)
+                             (print "going to inner"))
                            (def inner (compile res
                                                :element (elem :inner/element)
                                                :tags tags
@@ -293,6 +331,10 @@ hiccup was:
 
                          # else
                          (do
+
+                           (when (dyn :freja/log)
+                             (print "innermost: " f-or-kw))
+
                            (when tag-data
                              (put res :tag f-or-kw))
 
@@ -311,11 +353,14 @@ hiccup was:
 
             (when tag-data (merge-into outer tag-data))
 
-            (when-let [state (get outer :state)]
+            (when (get outer :init)
+              (unless (get outer :state)
+                (-> (put outer :state @{})
+                    (get :state)))
+              (def state (or (get outer :state)))
               (unless (state :compilation/inited)
                 (put state :compilation/inited true)
-                (when (get outer :init)
-                  (array/push to-init outer))))
+                (array/push to-init outer)))
 
             outer))))))
 

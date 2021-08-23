@@ -1,4 +1,4 @@
-(import ./default-tags :as dt)
+(import ./default-tags :as dt :fresh true)
 (import ./sizing/definite :as ds)
 (import ./sizing/relative :as rel)
 (import ./jaylib-sizing :as js :fresh true)

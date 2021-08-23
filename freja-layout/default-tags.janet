@@ -19,6 +19,9 @@ The default props are:
       -- set to (fn [self ev] ...) to have that function be called after sizing
          `ev` will be `[:init]`
 :state -- table containing state to be persisted between different compilations
+       -- freja-layout will put values in this table, with keys prefixed with :compilation/
+       -- this means you can force init to be called again by doing `(put state :compilation/inited nil)`
+:key -- used to track identity of element when being reordered inside its parent
 ``
   [element props]
   (def {:width width
@@ -28,9 +31,12 @@ The default props are:
         :max-width max-width
         :max-height max-height
         :init init
-        :state state} props)
+        :state state
+        :key key} props)
 
-  (when init (assert state "when :init is set, :state must be too"))
+  # don't want to accidentally replace with `nil`
+  (unless (element :state)
+    (put element :state state))
 
   # (put-many @{} :a x :b y) is like (-> @{} (put :a x) (put :b y))
   (put-many element
@@ -42,7 +48,7 @@ The default props are:
             :preset-max-height max-height
             :preset-min-height min-height
             :init init
-            :state state))
+            :key key))
 
 (defn flow
   ````
