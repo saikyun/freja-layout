@@ -7,6 +7,19 @@
 
 (defonce my-props @{})
 
+
+(defn hiccup
+  [props & children]
+  [:padding {:left 500
+             :right 100
+             :top 30}
+   [:background {:color :green}
+    [:column {}
+     [:block {:weight 1}
+      "hello"]
+     [:block {:weight 1}
+      "right yeah that is not ok anytime whatever man"]]]])
+
 (comment
   (defn hiccup
     [props & children]
@@ -21,12 +34,14 @@
   #
 )
 
-
-(defn hiccup
-  [props & children]
-  [:padding {:left 875
-             :top 30}
-   "ab cd"])
+(comment
+  (defn hiccup
+    [props & children]
+    [:padding {:left 875
+               :top 30}
+     "ab cd"])
+  #
+)
 
 (comment
   (import ../freja-layout/compile-hiccup :as ch :fresh true)

@@ -39,7 +39,7 @@
   (assert2 (table? with-sizes))
 
   # width is the width of children
-  (assert2 (= (with-sizes :width) 116))
+  (assert2 (= (with-sizes :width) 117))
 
   # three lines since block becomes its own line
   (assert2 (= 1 (length (with-sizes :layout/lines)))))
@@ -127,7 +127,7 @@
   (assert2 (table? with-sizes))
 
   # shrinks to biggest child width ("hello" in this case)
-  (assert2 (= 26 (get-in with-sizes [:children 0 :width]))))
+  (assert2 (= 27 (get-in with-sizes [:children 0 :width]))))
 
 
 (let [el (compile
@@ -186,7 +186,7 @@
 
   # since the first child is bigger than the max-width
   # it will grow outside the bounds
-  (assert2 (= 247 (el :width))))
+  (assert2 (= 249 (el :width))))
 
 
 (let [el (compile [:shrink {}
@@ -208,8 +208,9 @@
   # weight 1 on both children should mean a width of 100
   # but due to the padding being 100, plus the size of "Open"
   # the width grows bigger than that
-  (assert2 (= 128 (get-in el [:children 0 :children 0 :width])))
-  (assert2 (= 19 (get-in el [:children 0 :children 1 :width]))))
+
+  (assert2 (= 129 (get-in el [:children 0 :children 0 :width])))
+  (assert2 (= 20 (get-in el [:children 0 :children 1 :width]))))
 
 
 (let [el (compile [:row {}
@@ -230,9 +231,10 @@
   # weight 1 on both children should mean a width of 100
   # but due to the padding being 100, plus the size of "Open"
   # the width grows bigger than that
-  (assert2 (= 128 (get-in el [:children 0 :width])))
-  # the second child gets the rest (lonely weight 1 of 72px = 72px)
-  (assert2 (= 72 (get-in el [:children 1 :width]))))
+
+  (assert2 (= 129 (get-in el [:children 0 :width])))
+  # the second child gets the rest (lonely weight 1 of 71px = 71px)
+  (assert2 (= 71 (get-in el [:children 1 :width]))))
 
 
 (let [el (compile [:row {}
@@ -290,6 +292,26 @@
     (init-all to-init)
 
     (assert2 (= outer-el el))))
+
+# column
+
+(let [el (compile [:column {}
+                   [:flow {:weight 1}
+                    "Open"]
+
+                   [:flow {:weight 1}
+                    "wat"]]
+                  :tags jt/tags)
+      with-sizes (d/set-definite-sizes el 200 600)
+      with-sizes (set-relative-size el 200 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes))
+
+  # weight 1 on both children should mean a width of 100
+  # but due to the padding being 100, plus the size of "Open"
+  # the width grows bigger than that
+  (pp (get-in el [:children 0 :height])))
 
 #
 #

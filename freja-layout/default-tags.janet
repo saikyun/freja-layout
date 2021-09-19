@@ -129,6 +129,13 @@ You can mix this with children having absolute widths.
   (-> (dyn :element)
       (add-default-props props)))
 
+
+(defn column
+  [props & children]
+  (-> (dyn :element)
+      (add-default-props props)))
+
+
 (defn in-rec?
   ``
 Checks if point `[px py]` is within rectangle `x y w h`.
@@ -431,6 +438,7 @@ click events done within its bounds.
 
             :flow @{:f flow}
             :row @{:f row}
+            :column @{:f column}
             :text @{:f text}
             :padding @{:f padding}
             :align @{:f align}

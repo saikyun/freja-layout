@@ -218,6 +218,118 @@
   el)
 
 
+(defn column-sizing
+  [el context-max-width context-max-height]
+
+  (def {:children children
+        :min-height min-height} el)
+
+  (var total-weight 0)
+  (def total-height context-max-height)
+  (var height-used 0)
+
+  (loop [c :in children
+         :let [{:weight weight} (c :props)]]
+    (if weight
+      (+= total-weight weight)
+      (+= height-used (c :min-height))))
+
+  (def height-per-weight (/ (- total-height height-used)
+                            total-weight))
+
+  (loop [c :in children
+         :let [{:min-height mh} c
+               {:weight weight} (c :props)]]
+    (when (and weight
+               (> mh height-per-weight))
+      (+= height-used (c :min-height))
+      (-= total-weight weight)
+      (put c :height mh)))
+
+  (def height-per-weight (/ (- total-height height-used)
+                            total-weight))
+
+  (var min-w 0)
+
+  (var extra 0)
+
+  (loop [c :in children
+         :let [{:height ch} c
+               {:weight weight} (c :props)]]
+    (when (and weight (not ch))
+      # the leftover / extra stuff is done in order to
+      # always have int weightw, but also always
+      # take up all of the available height
+      (let [h (* weight height-per-weight)
+            floored-h (math/floor h)
+            leftover (- h floored-h)]
+        (+= extra leftover)
+        # need to do this because float 1 is not always 1
+        (if (>= extra 0.9999999)
+          (do
+            (-- extra)
+            (put c :height (inc floored-h)))
+          (put c :height floored-h))))
+    (set min-w (max min-w (get c :min-width))))
+
+  (put el :min-width min-w)
+
+  (if (zero? total-weight)
+    (put el :height height-used)
+    (put el :height total-height))
+
+  (def {:content-max-width max-w
+        :content-max-height max-h
+        :children children
+        :layout/lines lines} el)
+
+  (default lines (let [ls @[]]
+                   (put el :layout/lines ls)
+                   ls))
+
+  (array/clear lines)
+
+  (var x 0)
+  (var y 0)
+  (var column-w 0)
+  (var biggest-h 0)
+
+  # lines in :vertical are columns
+  (loop [i :range [0 (length children)]
+         :let [c (get children i)
+               weight (get-in c [:props :weight])
+               _ (set-relative-size c
+                                    max-w
+                                    (if weight
+                                      (c :height)
+                                      (get c :min-height 0)) # if no weight, shrink as much as possible
+)
+               {:width w
+                :height h} c]]
+
+    (when (and (pos? y)
+               (or (= y max-h) # this is to cover the case when w is 0
+                   (> (+ y h) max-h)))
+      (array/push lines i)
+      (set biggest-h (max biggest-h x))
+      (set y 0)
+      (+= x column-w))
+
+    (+= y h)
+    (set column-w (max column-w w)))
+
+  (unless (= (length children) (last lines))
+    (array/push lines (length children)))
+
+  (unless (el :width)
+    (put el :width (+ x column-w)))
+
+  (unless (el :height)
+    (put el :height (max biggest-h y)))
+
+  el)
+
+
 (defn block-sizing
   [el context-max-width context-max-height]
   (def has-width? (el :width))

@@ -24,6 +24,10 @@
             :row @{:f dt/row
                    :definite-sizing ds/row-sizing
                    :relative-sizing rel/row-sizing}
+            :column @{:f dt/column
+                      :definite-sizing ds/column-sizing
+                      :relative-sizing rel/column-sizing
+                      :render-children jr/column-render-children}
             :background @{:f dt/background
                           :render jr/background-render
                           :relative-sizing rel/flow-sizing}

@@ -150,6 +150,77 @@
   #
 )
 
+
+(varfn column-render-children
+  [{:children children
+    :layout/lines lines
+    :f f}
+   parent-x
+   parent-y]
+
+  (def screen-w (get-screen-width))
+
+  (print ">> rendering " (length children) " children for")
+  (print f)
+
+  (default lines [0 (length children)])
+
+  (var line-start 0)
+  (var x 0)
+
+  (loop [line-end :in lines
+         :while (< (+ parent-x x) screen-w)]
+    #
+    (var line-w 0)
+    (var y 0)
+
+    (loop [i :range [line-start line-end]
+           :let [c (children i)
+                 {:width w
+                  :height h} c]]
+      #(print)
+      #(print "new stuff wat")
+      #(print (c :f))
+      #(print "???" (c :width) "-" w)
+
+      (put c :left x)
+      (put c :top y)
+
+      (render c (+ x
+                   parent-x)
+              (+ y
+                 parent-y))
+
+      #(print)
+
+      #(print (c :f))
+
+
+      #(tracev x) (tracev w)
+      #(print (string/format "%.40M" c))
+      (+= y h)
+
+      (rl-translatef 0 h 0)
+      (set line-w (max line-w w)))
+
+    # (print "end of line")
+
+    (+= x line-w)
+
+    (set line-start line-end)
+
+    (rl-translatef line-w (- y) 0)
+    #
+)
+
+  (rl-translatef (- x) 0 0)
+
+  #(print "<< done rendering children on y " y " / " screen-h)
+
+  #
+)
+
+
 (defn align-render-children
   [el parent-x parent-y]
   (def {:children children

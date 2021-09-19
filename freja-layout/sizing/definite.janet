@@ -188,8 +188,80 @@
     (set row-h (max row-h (c :min-height))))
 
   (put row :min-width (max cs-min-width
-                           (get :row :min-width 0)))
+                           (get row :min-width 0)))
   (put row :min-height (max row-h
-                            (get :row :min-height 0)))
+                            (get row :min-height 0)))
 
   row)
+
+
+### COLUMN
+
+# column is a copy of row, but acting on height instead of width
+
+(defn column-sizing
+  [column context-max-width context-max-height]
+
+  (default-content-widths column context-max-width context-max-height)
+
+  (def {:children children} column)
+
+  # sum of all childrens' minimum height
+  (var cs-min-height 0)
+  (var column-w 0)
+
+  # we need to figure out height per weight
+  (var total-weight 0)
+  (def total-height context-max-height)
+  (var height-used 0)
+
+  (loop [c :in children
+         :let [{:weight weight
+                :preset-height preset-height} (c :props)]]
+    (cond preset-height
+      (+= height-used preset-height)
+
+      weight
+      (+= total-weight weight)))
+
+  (def height-per-weight (/ (- total-height height-used)
+                            total-weight))
+
+  # store leftover height when there is fractioned heights
+  (var extra 0)
+
+  (loop [c :in children
+         :let [{:weight weight} (c :props)
+               left-of-max-height (- (column :content-max-height)
+                                     cs-min-height)]]
+    (def max-height
+      (if weight
+        # we don't want fractions in our heights
+        # so when extra passes a threshold,
+        # we inc the height
+        (min left-of-max-height
+             (let [h (* weight height-per-weight)
+                   floored-h (math/floor h)
+                   leftover (- h floored-h)]
+               (+= extra leftover)
+               # need to do this because float 1 is not always 1
+               (if (>= extra 0.9999999)
+                 (do (-- extra)
+                   (inc floored-h))
+                 floored-h)))
+
+        left-of-max-height))
+
+    (set-definite-sizes
+      c
+      (column :content-max-width)
+      max-height)
+    (+= cs-min-height (c :min-height))
+    (set column-w (max column-w (c :min-height))))
+
+  (put column :min-width (max column-w
+                              (get column :min-width 0)))
+  (put column :min-height (max cs-min-height
+                               (get column :min-height 0)))
+
+  column)
