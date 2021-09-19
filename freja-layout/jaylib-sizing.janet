@@ -47,13 +47,13 @@ To add no word wrapping, one could add a "no-break" option.
   (def [space-w _] (freja-jaylib/measure-text-ex
                      loaded-font " " size spacing))
 
-  (tracev (freja-jaylib/measure-text-ex loaded-font "ab " size spacing))
+  (freja-jaylib/measure-text-ex loaded-font "ab " size spacing)
 
   (each l lines
     (let [words (string/split " " l)]
       (each word words
         (let [[ww wh] (freja-jaylib/measure-text-ex loaded-font word size spacing)]
-          (when (tracev (and (pos? (tracev x)) (tracev (> (tracev (+ ww x)) (tracev max-width)))))
+          (when (and (pos? x) (> (+ ww x) max-width))
             # if we end up here, a line was too long
             (eol))
 
@@ -63,16 +63,16 @@ To add no word wrapping, one could add a "no-break" option.
           (buffer/push-string current-line word)
 
           (set lh (max wh lh))
-          (+= x (tracev ww))
-          (+= x (tracev space-w))
+          (+= x ww)
+          (+= x space-w)
           (+= x spacing)
-          (tracev x))))
+          x)))
     # here is just end of line due to a newline character
     (eol))
 
   (put-many
     el
     :line-ys line-ys
-    :lines (tracev new-lines)
-    :width (tracev w)
+    :lines new-lines
+    :width w
     :height h))

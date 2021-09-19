@@ -34,8 +34,6 @@
 
   el)
 
-## TODO: implement the "wrapping" behaviour
-
 (defn flow-sizing
   [el context-max-width context-max-height]
   (def {:content-max-width max-w
