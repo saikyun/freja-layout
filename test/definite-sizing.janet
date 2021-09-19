@@ -1,18 +1,13 @@
 (use ../freja-layout/assert2)
 (use ../freja-layout/compile-hiccup)
 (import ./test-tags :as jt :fresh true)
-(use ../freja-layout/sizing/definite)
+(import ../freja-layout/sizing/definite :prefix "" :fresh true)
 (import freja/assets :as a)
 
 (a/register-default-fonts)
 (setdyn :text/get-font a/font)
 
 (setdyn :pretty-format "%.40M")
-
-
-
-
-
 
 
 # basic test
@@ -29,12 +24,6 @@
   (let [c (get-in with-sizes [:children 0])
         {:width w :height h} c]
     (assert2 (and (= w 16) (= h 14)) (pp c))))
-
-
-
-
-
-
 
 
 (put-in jt/tags [:padding :definite-sizing] padding-sizing)
@@ -58,10 +47,6 @@
 
   # height is max-height - top - bottom
   (assert2 (= 785 (with-sizes :content-max-width))))
-
-
-
-
 
 
 (put-in jt/tags [:row :definite-sizing] row-sizing)
@@ -103,6 +88,33 @@
                     [:padding {:right 300}
                      [:block {} "hej"]]]
                    [:block {:weight 2}]]
+                  :tags jt/tags)
+      with-sizes (set-definite-sizes el 800 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes)))
+
+# TODO: add assertions about no fraction
+(let [el (compile [:row {}
+                   [:block {:weight nil}
+                    [:block {} "hej"]]
+                   [:block {:weight 1}
+                    "wat"]
+                   [:block {:weight 2}
+                    "wat2"]]
+                  :tags jt/tags)
+      with-sizes (set-definite-sizes el 800 600)]
+
+  (print-tree with-sizes)
+  (assert2 (table? with-sizes)))
+
+
+
+(let [el (compile [:row {}
+                   [:block {:weight 1}
+                    [:block {} "hej"]]
+                   [:block {:weight 1}
+                    "wat2 ntoseuha untsehoa sntueh oantsu hentsoa huntseoa hnsuteo"]]
                   :tags jt/tags)
       with-sizes (set-definite-sizes el 800 600)]
 

@@ -13,7 +13,7 @@
              :top 30}
    [:background {:color :green}
     [:row {}
-     [:block {}
+     [:block {:weight 1}
       "hello"]
      [:block {:weight 1}
       "right yeah that is not ok anytime whatever man"]]]])

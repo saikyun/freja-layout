@@ -134,14 +134,55 @@
 
   (def {:children children} row)
 
+  # sum of all childrens' minimum width
   (var cs-min-width 0)
   (var row-h 0)
 
+  # we need to figure out width per weight
+  (var total-weight 0)
+  (def total-width context-max-width)
+  (var width-used 0)
+
   (loop [c :in children
-         :let [{:weight weight} (c :props)]]
+         :let [{:weight weight
+                :preset-width preset-width} (c :props)]]
+    (cond preset-width
+      (+= width-used preset-width)
+
+      weight
+      (+= total-weight weight)))
+
+  (def width-per-weight (/ (- total-width width-used)
+                           total-weight))
+
+  # store leftover width when there is fractioned widths
+  (var extra 0)
+
+  (loop [c :in children
+         :let [{:weight weight} (c :props)
+               left-of-max-width (- (row :content-max-width)
+                                    cs-min-width)]]
+    (def max-width
+      (if weight
+        # we don't want fractions in our widths
+        # so when extra passes a threshold,
+        # we inc the width
+        (min left-of-max-width
+             (let [w (* weight width-per-weight)
+                   floored-w (math/floor w)
+                   leftover (- w floored-w)]
+               (+= extra leftover)
+               # need to do this because float 1 is not always 1
+               (if (>= extra 0.9999999)
+                 (do (-- extra)
+                   (inc floored-w))
+                 floored-w)))
+
+        left-of-max-width))
+
     (set-definite-sizes
       c
-      (row :content-max-width)
+      max-width
       (row :content-max-height))
     (+= cs-min-width (c :min-width))
     (set row-h (max row-h (c :min-height))))
@@ -152,6 +193,3 @@
                             (get :row :min-height 0)))
 
   row)
-
-
-
