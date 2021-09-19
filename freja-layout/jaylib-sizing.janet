@@ -4,7 +4,8 @@
 
 (defmacro eol
   []
-  ~(do (-= x space-w) # remove the size of the space
+  ~(unless (zero? x)
+     (-= x space-w) # remove the size of the space
      (set w (max w x))
      (set x 0)
      (+= h (* line-height lh))
@@ -33,8 +34,6 @@ To add no word wrapping, one could add a "no-break" option.
   (def line-ys (array/new (length lines)))
   (array/push line-ys 0)
 
-  ## TODO: need to word wrap
-
   (var w 0)
   (var h 0)
   (var x 0)
@@ -48,11 +47,13 @@ To add no word wrapping, one could add a "no-break" option.
   (def [space-w _] (freja-jaylib/measure-text-ex
                      loaded-font " " size spacing))
 
+  (tracev (freja-jaylib/measure-text-ex loaded-font "ab " size spacing))
+
   (each l lines
     (let [words (string/split " " l)]
       (each word words
         (let [[ww wh] (freja-jaylib/measure-text-ex loaded-font word size spacing)]
-          (when (and (pos? x) (> (+ ww x) max-width))
+          (when (tracev (and (pos? (tracev x)) (tracev (> (tracev (+ ww x)) (tracev max-width)))))
             # if we end up here, a line was too long
             (eol))
 
@@ -62,14 +63,16 @@ To add no word wrapping, one could add a "no-break" option.
           (buffer/push-string current-line word)
 
           (set lh (max wh lh))
-          (+= x ww)
-          (+= x space-w))))
+          (+= x (tracev ww))
+          (+= x (tracev space-w))
+          (+= x spacing)
+          (tracev x))))
     # here is just end of line due to a newline character
     (eol))
 
   (put-many
     el
     :line-ys line-ys
-    :lines new-lines
-    :width w
+    :lines (tracev new-lines)
+    :width (tracev w)
     :height h))

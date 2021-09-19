@@ -1,4 +1,4 @@
-(import ../freja-layout/jaylib-tags :as jt)
+(import ../freja-layout/jaylib-tags :as jt :fresh true)
 (import ../freja-layout/sizing/relative :as rs)
 (import freja/hiccup :as h)
 (import freja/events :as e)
@@ -7,16 +7,26 @@
 
 (defonce my-props @{})
 
+(comment
+  (defn hiccup
+    [props & children]
+    [:padding {:left 500
+               :top 30}
+     [:background {:color :green}
+      [:row {}
+       [:block {:weight 1}
+        "hello"]
+       [:block {:weight 1}
+        "right yeah that is not ok anytime whatever man"]]]])
+  #
+)
+
+
 (defn hiccup
   [props & children]
-  [:padding {:left 500
+  [:padding {:left 875
              :top 30}
-   [:background {:color :green}
-    [:row {}
-     [:block {:weight 1}
-      "hello"]
-     [:block {:weight 1}
-      "right yeah that is not ok anytime whatever man"]]]])
+   "ab cd"])
 
 (comment
   (import ../freja-layout/compile-hiccup :as ch :fresh true)
