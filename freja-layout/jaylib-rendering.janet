@@ -160,8 +160,8 @@
 
   (def screen-w (get-screen-width))
 
-  (print ">> rendering " (length children) " children for")
-  (print f)
+  #(print ">> rendering " (length children) " children for")
+  #(print f)
 
   (default lines [0 (length children)])
 
