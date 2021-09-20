@@ -13,6 +13,18 @@
 ## all min-widths can be calculated in this step too.
 ## another example are elements with preset width / height.
 
+## WARNING!!!
+# if you do both definite AND relative sizing,
+# the :content-max-width and :content-max-width
+# might be mutated during relative sizing.
+# so if you get confused about these values during definite-sizing,
+# e.g. when printing the tree after both kinds of sizing
+# make sure to print these values directly after or during definite-sizing
+#
+# a non-mutating solution would be nice,
+# but this is how it is atm
+#
+
 (defn traverse-render-tree
   [f el]
   (loop [c :in (get el :children)]

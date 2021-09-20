@@ -11,6 +11,18 @@
 ## sizes when the sizes depend on other variables than
 ## max-width/max-height. e.g. the width of children.
 
+## WARNING!!!
+# if you do both definite AND relative sizing,
+# the :content-max-width and :content-max-width
+# might be mutated during relative sizing.
+# so if you get confused about these values during definite-sizing,
+# e.g. when printing the tree after both kinds of sizing
+# make sure to print these values directly after or during definite-sizing
+#
+# a non-mutating solution would be nice,
+# but this is how it is atm
+#
+
 (var default-relative-sizing nil)
 
 (defn set-relative-size
