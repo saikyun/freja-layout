@@ -15,7 +15,17 @@
 
 (defn set-relative-size
   [el context-max-width context-max-height]
-  (def {:relative-sizing sizing} el)
+  (def {:relative-sizing sizing
+        :width width
+        :height height} el)
+
+  # something might have set the sizes during definite sizing (eg row/column)
+  # which is smaller than the original max-width/height
+  # TODO: make this more clear -- now we mutate a value
+  # that might be confusing if one is debugging definite-sizing
+  (update el :content-max-width min width)
+  (update el :content-max-height min height)
+
   (if sizing
     (sizing el context-max-width context-max-height)
     (default-relative-sizing el context-max-width context-max-height)))
