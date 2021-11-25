@@ -10,10 +10,14 @@ No extra dependencies needed. Needs a terminal with support for ansi escape code
 ```
 git clone https://github.com/Saikyun/freja-layouting
 cd freja-layouting
-janet test/ascii-layouting.janet 'there was a little girl, who liked to eat the world. but then a mad guy came, and shouted "NO!"' \
+
+janet test/ascii-layouting.janet \
+'there was a little girl, who liked to eat the world. but then a mad guy came, and shouted "NO!"' \
 'she was so distraught, that she started running toward the man. he understood that he had made a mistake.' \
 'this was not any little girl, I mean, she could eat the world. so he bailed.'
+
 # prints
+
 there was a little girlshe was so distraught,   this was not any little
 who liked to eat the   that she started running girl, I mean, she could
 world. but then a mad  toward the man. he       eat the world. so he
