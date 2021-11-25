@@ -70,7 +70,11 @@ To add no word wrapping, one could add a "no-break" option.
 (defn text-render
   [{:text text
     :lines lines} x y]
-  (loop [l :in lines]
+  (loop [i :range [0 (length lines)]
+         :let [l (in lines i)]]
+    (prin "\e["
+          (+ y i 1) ";"
+          x "H")
     (print l)))
 
 (defn text
@@ -261,3 +265,9 @@ To add no word wrapping, one could add a "no-break" option.
   (print)
   (print)
   (print))
+
+(when (dyn :freja/loading-file)
+  (main nil
+        "left"
+        "123798398021 73908 21739 0271 9037 2901 730921 7903821 "
+        "right"))
