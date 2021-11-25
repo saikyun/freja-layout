@@ -74,7 +74,7 @@ To add no word wrapping, one could add a "no-break" option.
          :let [l (in lines i)]]
     (prin "\e["
           (+ y i 1) ";"
-          x "H")
+          (+ x 1) "H")
     (print l)))
 
 (defn text
@@ -96,14 +96,19 @@ To add no word wrapping, one could add a "no-break" option.
           :definite-sizing def-siz/row-sizing
           :relative-sizing rel-siz/row-sizing}
     :block {:f dt/flow
-            :relative-sizing rel-siz/block-sizing}})
+            :relative-sizing rel-siz/block-sizing}
+    :padding @{:f dt/padding
+               :definite-sizing def-siz/padding-sizing
+               :relative-sizing rel-siz/padding-sizing}})
 
 (defn hiccup
   [{:columns cs}]
   [:row {}
    ;(seq [c :in cs]
+
       [:block {:weight 1}
-       c])])
+       [:padding {:all 1}
+        c]])])
 
 (def props @{:columns ["hej"
                        "lul"]})
@@ -216,9 +221,11 @@ To add no word wrapping, one could add a "no-break" option.
 
       (prin "\e["
             (+ y
-               parent-y) ";"
+               parent-y
+               1) ";"
             (+ x
-               parent-x) "H")
+               parent-x
+               1) "H")
 
       (with-dyns [:out buf2]
         (render c
