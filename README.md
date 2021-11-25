@@ -1,4 +1,4 @@
-# freja-layouting123
+# freja-layouting
 layouting library for freja
 
 # ascii-example
