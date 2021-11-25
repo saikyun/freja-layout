@@ -5,6 +5,8 @@
 (import ./../freja-layout/sizing/definite :as def-siz)
 (import ./../freja-layout/sizing/relative :as rel-siz)
 
+### Library code, look at main at the bottom for "user code"
+
 (defmacro eol
   []
   ~(unless (zero? x)
@@ -100,18 +102,6 @@ To add no word wrapping, one could add a "no-break" option.
     :padding @{:f dt/padding
                :definite-sizing def-siz/padding-sizing
                :relative-sizing rel-siz/padding-sizing}})
-
-(defn hiccup
-  [{:columns cs}]
-  [:row {}
-   ;(seq [c :in cs]
-
-      [:block {:weight 1}
-       [:padding {:all 1}
-        c]])])
-
-(def props @{:columns ["hej"
-                       "lul"]})
 
 (defn get-font
   []
@@ -256,23 +246,43 @@ To add no word wrapping, one could add a "no-break" option.
     #
 ))
 
+
+###
+
 (defn main
   [& args]
-  (put props :columns (drop 1 args))
+  (def props @{:columns (drop 1 args)})
+
+  (defn hiccup
+    [{:columns cs}]
+    # row aligns horizontally
+    [:row {}
+     ;(seq [c :in cs]
+        [:block {:weight 1}
+         [:padding {:all 1}
+          c]])])
 
   (def tree (compile-tree hiccup props
                           :max-width (terminal-width)
                           :max-height 30
                           :tags ascii-tags))
 
+  # uncomment to see render tree5554
   #(ch/print-tree tree)
 
+  # clear screen
   (print "\ec")
+
+  # render hiccup
   (render tree 0 0)
+
+  # some space please
   (print)
   (print)
   (print))
 
+#
+# Only runs when loading the file in freja
 (when (dyn :freja/loading-file)
   (main nil
         "left"
