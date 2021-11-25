@@ -68,8 +68,10 @@ To add no word wrapping, one could add a "no-break" option.
     :height (length new-lines)))
 
 (defn text-render
-  [{:text text} x y]
-  (prin text))
+  [{:text text
+    :lines lines} x y]
+  (loop [l :in lines]
+    (print l)))
 
 (defn text
   [props & _]
@@ -93,14 +95,14 @@ To add no word wrapping, one could add a "no-break" option.
             :relative-sizing rel-siz/block-sizing}})
 
 (defn hiccup
-  [_]
+  [{:columns cs}]
   [:row {}
-   [:block {:weight 2}
-    "hello1"]
-   [:block {:weight 2}
-    "hello2"]])
+   ;(seq [c :in cs]
+      [:block {:weight 1}
+       c])])
 
-(def props @{})
+(def props @{:columns ["hej"
+                       "lul"]})
 
 (defn get-font
   []
@@ -156,12 +158,6 @@ To add no word wrapping, one could add a "no-break" option.
   (pp res)
   (scan-number (slice res 0 -2)))
 
-(def tree (compile-tree hiccup props
-                        :max-width (terminal-width)
-                        :max-height 30
-                        :tags ascii-tags))
-(ch/print-tree tree)
-
 (var flow-render-children nil)
 
 (defn noop
@@ -182,6 +178,7 @@ To add no word wrapping, one could add a "no-break" option.
                    (+ (get-in el [:offset 3] 0) x)
                    (+ (get-in el [:offset 0] 0) y)))
 
+(var debug-col 10)
 
 (varfn flow-render-children
   [{:children children
@@ -213,6 +210,12 @@ To add no word wrapping, one could add a "no-break" option.
 
       (def buf2 @"")
 
+      (prin "\e["
+            (+ y
+               parent-y) ";"
+            (+ x
+               parent-x) "H")
+
       (with-dyns [:out buf2]
         (render c
                 (+ x
@@ -226,9 +229,9 @@ To add no word wrapping, one could add a "no-break" option.
 
       (+= x w)
 
-      (loop [_ :range [0 (- x (length buf))]]
-        # padding
-        (prin " "))
+      #      (loop [_ :range [0 (- x (length buf))]]
+      #        # padding
+      #        (prin " "))
 
       (set line-h (max line-h h)))
 
@@ -242,6 +245,19 @@ To add no word wrapping, one could add a "no-break" option.
     #
 ))
 
+(defn main
+  [& args]
+  (put props :columns (drop 1 args))
 
-(render tree 0 0)
-(print)
+  (def tree (compile-tree hiccup props
+                          :max-width (terminal-width)
+                          :max-height 30
+                          :tags ascii-tags))
+
+  #(ch/print-tree tree)
+
+  (print "\ec")
+  (render tree 0 0)
+  (print)
+  (print)
+  (print))
