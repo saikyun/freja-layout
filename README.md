@@ -52,10 +52,10 @@ The important bits of the code, resulting in the above:
 ```
 
 
+<!--
 # dependencies (to try graphical examples)
 
 [freja](https://github.com/Saikyun/freja) installed
-
 
 
 # instructions to try shell example (you need `sh`)
@@ -79,7 +79,6 @@ README.md
 test
 ```
 5. In the bottom box, write `freja README.md` to open the file inside freja
-
 
 
 # instructions to try a test
@@ -110,3 +109,6 @@ freja test/min2.janet
   #
 )
 ```
+
+
+-->
