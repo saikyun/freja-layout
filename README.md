@@ -18,11 +18,13 @@ janet test/ascii-layouting.janet \
 
 # prints
 
-there was a little girlshe was so distraught,   this was not any little
-who liked to eat the   that she started running girl, I mean, she could
-world. but then a mad  toward the man. he       eat the world. so he
-guy came, and shouted  understood that he had   bailed.
-"NO!"                  made a mistake.
+
+ there was a little      she was so distraught,   this was not any little
+ girl, who liked to eat  that she started         girl, I mean, she could
+ the world. but then a   running toward the man.  eat the world. so he
+ mad guy came, and       he understood that he    bailed.
+ shouted "NO!"           had made a mistake.
+
 
 
 
