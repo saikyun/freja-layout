@@ -1,9 +1,9 @@
-(use ./freja-layout/put-many)
+(use ./../freja-layout/put-many)
 
-(import ./freja-layout/compile-hiccup :as ch)
-(import ./freja-layout/default-tags :as dt)
-(import ./freja-layout/sizing/definite :as def-siz)
-(import ./freja-layout/sizing/relative :as rel-siz)
+(import ./../freja-layout/compile-hiccup :as ch)
+(import ./../freja-layout/default-tags :as dt)
+(import ./../freja-layout/sizing/definite :as def-siz)
+(import ./../freja-layout/sizing/relative :as rel-siz)
 
 (defmacro eol
   []
