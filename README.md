@@ -30,6 +30,27 @@ janet test/ascii-layouting.janet \
 
 ```
 
+The important bits of the code, resulting in the above:
+```
+(defn main
+  [& args]
+  
+  (def props @{:columns (drop 1 args)})
+
+  (defn hiccup
+    # props are fed in as an argument
+    [{:columns cs}]
+    # :row layouts horizontally
+    [:row {}
+     ;(seq [c :in cs]
+        [:block {:weight 1}
+         [:padding {:all 1}
+          c]])])
+  # ...
+)
+```
+
+
 # dependencies (to try graphical examples)
 
 [freja](https://github.com/Saikyun/freja) installed
