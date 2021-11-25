@@ -46,7 +46,8 @@ The important bits of the code, resulting in the above:
         [:block {:weight 1}
          [:padding {:all 1}
           c]])])
-  # ...
+          
+  # ...compilation & rendering (printing)
 )
 ```
 
