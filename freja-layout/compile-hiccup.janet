@@ -1,8 +1,5 @@
 (import ./default-tags :prefix "" :fresh true)
 
-(use profiling/profile)
-
-
 (defn remove-keys
   [t ks]
   (def nt @{})
