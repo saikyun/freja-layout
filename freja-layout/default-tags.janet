@@ -180,34 +180,22 @@ You did it!
              #(print "testing " (get-in self [:props :id]))
 
              (def [kind] ev)
-             (def pos (if (= kind :scroll)
-                        (ev 2)
-                        (ev 1)))
 
              (def in?
-               (in-rec? pos
-                        (dyn :offset-x)
-                        (dyn :offset-y)
-                        (self :width)
-                        (self :height)))
+               (when-let [p (ev :mouse/pos)]
+                 (in-rec? p
+                          (dyn :offset-x)
+                          (dyn :offset-y)
+                          (self :width)
+                          (self :height))))
 
              (match ev
-               [:press pos]
+               {:mouse/down pos}
                (when in?
                  (put self :down true)
                  true)
 
-               [:double-click pos]
-               (when in?
-                 (put self :down true)
-                 true)
-
-               [:triple-click pos]
-               (when in?
-                 (put self :down true)
-                 true)
-
-               [:release pos]
+               {:mouse/release pos}
                (when (self :down)
                  (when in? ((props :on-click) ev))
 

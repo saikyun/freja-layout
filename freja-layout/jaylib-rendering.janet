@@ -69,7 +69,6 @@
   (default render-children flow-render-children)
 
   #(print (el :tag))
-  #(tracev p)
   (render el x y)
 
   (with-translation [o (el :offset)]
