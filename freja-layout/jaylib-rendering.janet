@@ -24,7 +24,10 @@
     :color color}
    x
    y]
-  (draw-rectangle 0 0 width height color))
+  # TODO: the flooring here is not actually needed
+  # but somehow row seems to calc wrong
+  # but will need to rework row so hotfixing for now
+  (draw-rectangle 0 0 (math/floor width) (math/floor height) color))
 
 
 (use freja-jaylib)
